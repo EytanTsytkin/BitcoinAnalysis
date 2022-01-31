@@ -1,0 +1,2 @@
+rm release/blocksci_parasr.pid
+blocksci_parser config.json update

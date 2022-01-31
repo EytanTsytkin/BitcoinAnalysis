@@ -1,0 +1,2 @@
+cd bitcoin-0.20.0/bin
+bitcoind -daemon
