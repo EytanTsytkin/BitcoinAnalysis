@@ -18,6 +18,7 @@ PLOTS_PATH = '/mnt2/plots/'
 ABUSE_PATH = '/mnt2/abuse_data/abuse.csv'
 STOPWORDS = stopwords.words('english')
 abuse_df = pd.read_csv(ABUSE_PATH)
+#every journy start
 
 
 def clean_tokens(list_of_tokens):
