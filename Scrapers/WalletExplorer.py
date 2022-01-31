@@ -1,14 +1,16 @@
 import os
+import bs4
+import time
 import json
 import requests
 import pandas as pd
-import time
-import bs4
+
 
 #WalletExplorer.com
 BASE = 'https://www.walletexplorer.com/'
 DOWNLOAD ='addresses?format=csv'
-ADDRESSBOOK_PATH = '/mnt/address_tags/AddressBook.json'
+TAGS_PATH = '/root/address_book/tags'
+ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
 
 
 def makeTypeSitesDict():
@@ -23,7 +25,7 @@ def makeTypeSitesDict():
 
 
 def nameToAddressList(name):
-    filename = f'/mnt/address_tags/{name.lower()}.csv'
+    filename = f'{TAGS_PATH}{name.lower()}.csv'
     try:
         data = pd.read_csv(filename,header=1)
         print(f'{name} success, adding to address book.\r')
@@ -48,7 +50,7 @@ def getData(Typedict):
         Typedict = makeTypeSitesDict()
     for key in Typedict.keys():
         for name in Typedict[key]:
-            filename = f'/mnt/address_tags/{name.lower()}.csv'
+            filename = f'{TAGS_PATH}{name.lower()}.csv'
             if not os.path.isfile(filename) or name.lower() in corrupt_files:
                 getNameCsv(name, filename)
 
@@ -56,14 +58,15 @@ def getData(Typedict):
 def testData():
     count = 0
     corrupt_files = set()
-    for file in os.listdir('/mnt/address_tags/'):
+    for file in os.listdir(TAGS_PATH):
         try:
-            data = pd.read_csv(f'/mnt/address_tags/{file}', header=1)
+            data = pd.read_csv(f'{TAGS_PATH}/{file}', header=1)
         except:
             count +=1
             corrupt_files.add(file.split('.csv')[0])
     print(f'Found {count} corrupt files.')
     return corrupt_files
+
 
 
 def makeAddressBook(Typedict):
@@ -78,5 +81,16 @@ def makeAddressBook(Typedict):
     return AddressBook
 
 
-
-
+if __name__ == "__main__":
+    TypeDict = makeTypeSitesDict()
+    for attempt in range(10):
+        try:
+            AddressBook = makeAddressBook(TypeDict)
+            with open(ADDRESSBOOK_PATH,'w') as i:
+                print(f'Attempt:{attempt + 1}. Success. Saving...')
+                json.dump(AddressBook,i)
+                print(f'Attempt:{attempt + 1}. Done.')
+            break
+        except Exception as e:
+            print(f'Attempt:{attempt+1}. Exception:{e}. Retrying..')
+            time.sleep(10)
