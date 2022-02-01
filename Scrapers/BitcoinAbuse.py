@@ -3,7 +3,7 @@ import pandas as pd
 from io import StringIO
 import os
 
-ABUSE_PATH = '/mnt2/abuse_data/abuse.csv'
+ABUSE_PATH = '/root/abuse_data/abuse.csv'
 API_TOKEN = "tcJqsIyaWmQln8JnjjqmMQ4dOIpxQBW8HfmotA86Kmx08FX2M05FSCPHlWTP"
 
 def getAbuseData():
