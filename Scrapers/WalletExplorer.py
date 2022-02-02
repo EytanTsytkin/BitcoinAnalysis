@@ -5,12 +5,13 @@ import json
 import requests
 import pandas as pd
 
+from PATHS import *
+
 
 #WalletExplorer.com
 BASE = 'https://www.walletexplorer.com/'
 DOWNLOAD ='addresses?format=csv'
-TAGS_PATH = '/root/address_book/tags/'
-ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
+
 
 
 def makeTypeSitesDict():

@@ -7,11 +7,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from PATHS import *
 
-SATOSHI = 10**-8
-PLOTS_PATH = '/mnt/plots/'
-
-chain = blocksci.Blockchain("/root/config.json")
+chain = blocksci.Blockchain(CONFIG_PATH)
 cc = blocksci.currency.CurrencyConverter(currency='USD',
                                          start=datetime.date(2009,1,3),
                                          end=datetime.date(2021,1,31))
