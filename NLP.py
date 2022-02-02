@@ -3,6 +3,7 @@ import nltk
 import string
 import pandas as pd
 from nltk.corpus import stopwords
+from Scrapers.BitcoinAbuse import ABUSE_PATH
 from nltk.stem import PorterStemmer
 from nltk.probability import FreqDist as FD
 
@@ -15,9 +16,8 @@ nltk.download('averaged_perceptron_tagger')
 
 SATOSHI = 10**-8
 PLOTS_PATH = '/mnt2/plots/'
-ABUSE_PATH = '/mnt2/abuse_data/abuse.csv'
-STOPWORDS = stopwords.words('english')
 abuse_df = pd.read_csv(ABUSE_PATH)
+STOPWORDS = stopwords.words('english')
 #every journy start
 
 
