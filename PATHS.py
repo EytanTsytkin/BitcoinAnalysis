@@ -1,5 +1,5 @@
 ABUSE_PATH = '/root/abuse_data'
-ADDRESSBOOK_PATH = '/root/address_book/'
+ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
 CONFIG_PATH = '/root/config.json'
 CLUSTER_PATH = '/root/BlockSci/docs/reference/clustering'
 IMAGE_PATH = '/home/eytantsytkin/BitcoinAnalysis'
