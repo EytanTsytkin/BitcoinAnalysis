@@ -2,3 +2,4 @@ IMAGE_PATH = '/home/eytantsytkin/BitcoinAnalysis'
 CONFIG_PAH = '/root/config.json'
 ABUSE_PATH = '/root/abuse_data'
 ADDRESSBOOK_PATH = '/root/address_book'
+
