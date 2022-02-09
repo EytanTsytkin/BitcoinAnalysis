@@ -1,18 +1,25 @@
-from PATHS import *
+import os
+import time
 import json
+import random
 import blocksci
+import datetime
 import numpy as np
 import pandas as pd
+from PATHS import *
+
 
 class AddressBook:
     def __init__(self):
         self.address_book: dict = self.load_book()
-        self.update_addresses = set([self.address_book.keys()])
-
+        self.update_addresses = None
+        self.cc = cc = blocksci.currency.CurrencyConverter(currency='USD',
+                                        start=datetime.date(2009,1,3),
+                                         end=datetime.date(2021,1,31))
 
     @staticmethod
     def load_book():
-        with open('/root/address_book/AddressBook.json', 'r') as f:
+        with open(ADDRESSBOOK_PATH, 'r') as f:
             book = json.load(f)
         dictionary = {}
         for wallet, wallet_list in book.items():
@@ -20,22 +27,30 @@ class AddressBook:
                 'type': wallet_list[0],
                 'specific_type': wallet_list[1],
                 'txes' : [],
-                'wallet_vector': pd.DataFrame(columns=['type', 'value', 'time'])
+                'wallet_vector': pd.DataFrame(columns=['type', 'valueBTC','valueUSD', 'time'])
             }
         return dictionary
 
-    def update_book(self, block: blocksci.Block, save = False):
-        for tx in block.txes.to_list():
+
+    def update_block(self, block: blocksci.Block, save = False):
+        print(f'Reading block: {block.hash.__str__()}',end='\r')
+        for idx, tx in enumerate(block.txes.to_list()):
             ins,outs = self._tx_to_address_list(tx)
-            for type in [ins,outs]:
-                for idx,address in enumerate(type):
+            for lst in [ins,outs]:
+                for indx,address in enumerate(lst):
                     if address[0] in self.update_addresses:
-                        self.address_book[address][wallet_vector].append({'type':address[1],
-                                                                          'valiue':self.get_value(tx,'in',address),
-                                                                          'time':tx.block_time})
+                        print(f'Found {address[0]} in tx no.{idx}')
+                        wv = self.address_book[address[0]]['wallet_vector']
+                        print(type(wv))
+                        wv = wv.append({'type':address[1],
+                                        'valueBTC':self.get_value(tx,address[1],indx),
+                                        'valueUSD':0,
+                                        'time':tx.block_time},
+                                        ignore_index=True)
+        os.system('cls')
 
 
-    def get_value(tx: blocksci.Tx ,type:str, index: int):
+    def get_value(self,tx: blocksci.Tx ,type:int, index: int):
         if type ==  -1:
             return tx.ins.value[index] * SATOSHI
         elif type == 1:
@@ -58,8 +73,35 @@ class AddressBook:
         return zip(ins_list,[-1 for i in ins_list])  , zip(outs_list,[1 for o in outs_list])
 
 
-def main():
-    ab = AddressBook()
-    print(ab)
+    def updateWalletVector(self,wallet_vector):
+        if len(wallet_vector) == 0:
+            pass
+        elif len(wallet_vector) == 1:
+            if wallet_vector.iloc[0]['valueUSD'] == 0:
+                wallet_vector.iloc[0]['valueUSD'] = self.cc.btc_to_currency(wallet_vector.iloc[0]['valueBTC'], wallet_vector.iloc[0]['time'])
+                wallet_vector.iloc[0]['time'] = self.timeToUnix(wallet_vector.iloc[0]['time'])
+        elif len(wallet_vector) > 1:
+            for idx in range(1, len(wallet_vector)):
+                if wallet_vector['valueUSD'] == 0:
+                    wallet_vector.iloc[idx]['valueBTC'] == wallet_vector.iloc[idx]['valueBTC'] - wallet_vector.iloc[idx-1]['valueBTC']
+                    wallet_vector.iloc[idx]['valueUSD'] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'], wallet_vector.iloc[idx]['time'])
+                    wallet_vector.iloc[idx]['time'] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
 
-main()
+
+    @staticmethod
+    def timeToUnix(datetime):
+        return time.mktime(datetime.timetuple())
+
+
+
+def test_update():
+    ab = AddressBook()
+    ab.update_addresses = set(random.sample(ab.address_book.keys(), 10))
+    chain = blocksci.Blockchain('/root/config.json')
+    b = [chain.address_from_string(ad).first_tx.block.hash.__str__() for ad in ab.update_addresses]
+    blocks = list(filter((lambda block: block.hash.__str__() in b), chain.blocks.to_list()))
+    for block in blocks:
+        ab.update_block(block)
+    for ad in ab.update_addresses:
+        print(ab.address_book[ad]['wallet_vector'])
+    return ab

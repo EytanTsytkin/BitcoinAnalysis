@@ -11,6 +11,7 @@
           </settings>
         </remote-mappings>
         <remote-mappings server-id="python@sftp://eytantsytkin@34.133.210.160:22/usr/bin/python3" />
+        <remote-mappings server-id="python@sftp://eytantsytkin@34.133.133.91:22/usr/bin/python3" />
       </list>
     </list>
   </component>
