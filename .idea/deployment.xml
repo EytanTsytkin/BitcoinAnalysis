@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" filePermissions="511" folderPermissions="511" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
-      <paths name="eytantsytkin@34.132.220.85:22">
+      <paths name="GCP Cloud">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/eytantsytkin/BitcoinAnalysis" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="eytantsytkin@34.134.79.24:22 password">
+      <paths name="eytantsytkin@34.132.220.85:22">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/eytantsytkin/BitcoinAnalysis" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="eytantsytkin@34.133.210.160:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/eytantsytkin/BitcoinAnalysis" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
@@ -24,5 +31,6 @@
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

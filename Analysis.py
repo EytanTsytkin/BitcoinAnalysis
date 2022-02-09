@@ -11,10 +11,8 @@ from PATHS import *
 
 chain = blocksci.Blockchain(CONFIG_PATH)
 cc = blocksci.currency.CurrencyConverter(currency='USD',
-                                         start=datetime.date(2009,1,3),
+                                        start=datetime.date(2009,1,3),
                                          end=datetime.date(2021,1,31))
-addr = blocksci.address_type.pubkey
-wallet = chain.address_from_string(chain.addresses(addr)[2426948].address_string)
 
 
 def timeToUnix(datetime):
