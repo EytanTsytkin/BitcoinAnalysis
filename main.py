@@ -106,5 +106,3 @@ def test_update(n):
         ab.updateWalletVector(ab.address_book[ad]['wallet_vector'])
         print(ab.address_book[ad]['wallet_vector'])
     return ab
-
-def test_single_wallet()
