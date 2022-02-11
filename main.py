@@ -1,4 +1,3 @@
-import os
 import time
 import json
 import random
@@ -21,15 +20,16 @@ class AddressBook:
     def load_book():
         with open(ADDRESSBOOK_PATH, 'r') as f:
             book = json.load(f)
-        dictionary = {}
-        for wallet, wallet_list in book.items():
-            dictionary[wallet] = {
-                'type': wallet_list[0],
-                'specific_type': wallet_list[1],
-                'txes' : [],
-                'wallet_vector': pd.DataFrame(columns=['type', 'valueBTC','valueUSD', 'time'])
-            }
-        return dictionary
+            return book
+        # dictionary = {}
+        # for wallet, wallet_list in book.items():
+        #     dictionary[wallet] = {
+        #         'type': wallet_list[0],
+        #         'specific_type': wallet_list[1],
+        #         'txes' : [],
+        #         'wallet_vector': pd.DataFrame(columns=['type', 'valueBTC','valueUSD', 'time'])
+        #     }
+        # return dictionary
 
 
     def update_block(self, block: blocksci.Block, save = False):
@@ -40,14 +40,12 @@ class AddressBook:
                 for indx,address in enumerate(lst):
                     if address[0] in self.update_addresses:
                         print(f'Found {address[0]} in tx no.{idx}')
-                        wv = self.address_book[address[0]]['wallet_vector']
-                        print(type(wv))
-                        wv = wv.append({'type':address[1],
+                        self.address_book[address[0]]['wallet_vector'] = self.address_book[address[0]]['wallet_vector'].append({'type':address[1],
                                         'valueBTC':self.get_value(tx,address[1],indx),
                                         'valueUSD':0,
                                         'time':tx.block_time},
                                         ignore_index=True)
-        os.system('cls')
+
 
 
     def get_value(self,tx: blocksci.Tx ,type:int, index: int):
@@ -78,14 +76,14 @@ class AddressBook:
             pass
         elif len(wallet_vector) == 1:
             if wallet_vector.iloc[0]['valueUSD'] == 0:
-                wallet_vector.iloc[0]['valueUSD'] = self.cc.btc_to_currency(wallet_vector.iloc[0]['valueBTC'], wallet_vector.iloc[0]['time'])
-                wallet_vector.iloc[0]['time'] = self.timeToUnix(wallet_vector.iloc[0]['time'])
+                wallet_vector.iat[0,2] = self.cc.btc_to_currency(wallet_vector.iloc[0]['valueBTC'], wallet_vector.iloc[0]['time'])
+                wallet_vector.iat[0,3] = self.timeToUnix(wallet_vector.iloc[0]['time'])
         elif len(wallet_vector) > 1:
             for idx in range(1, len(wallet_vector)):
-                if wallet_vector['valueUSD'] == 0:
-                    wallet_vector.iloc[idx]['valueBTC'] == wallet_vector.iloc[idx]['valueBTC'] - wallet_vector.iloc[idx-1]['valueBTC']
-                    wallet_vector.iloc[idx]['valueUSD'] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'], wallet_vector.iloc[idx]['time'])
-                    wallet_vector.iloc[idx]['time'] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
+                if wallet_vector.iloc[idx]['valueUSD'] == 0:
+                    wallet_vector.iat[idx,1] = wallet_vector.iloc[idx]['valueBTC'] - wallet_vector.iloc[idx-1]['valueBTC']
+                    wallet_vector.iat[idx,2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'], wallet_vector.iloc[idx]['time'])
+                    wallet_vector.iat[idx,3] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
 
 
     @staticmethod
@@ -94,9 +92,9 @@ class AddressBook:
 
 
 
-def test_update():
+def test_update(n):
     ab = AddressBook()
-    ab.update_addresses = set(random.sample(ab.address_book.keys(), 10))
+    ab.update_addresses = set(random.sample(ab.address_book.keys(), n))
     chain = blocksci.Blockchain('/root/config.json')
     b = [chain.address_from_string(ad).first_tx.block.hash.__str__() for ad in ab.update_addresses]
     blocks = list(filter((lambda block: block.hash.__str__() in b), chain.blocks.to_list()))
@@ -104,4 +102,9 @@ def test_update():
         ab.update_block(block)
     for ad in ab.update_addresses:
         print(ab.address_book[ad]['wallet_vector'])
+    for ad in ab.update_addresses:
+        ab.updateWalletVector(ab.address_book[ad]['wallet_vector'])
+        print(ab.address_book[ad]['wallet_vector'])
     return ab
+
+def test_single_wallet()
