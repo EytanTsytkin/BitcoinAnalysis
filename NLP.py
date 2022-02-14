@@ -14,7 +14,7 @@ nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
 
 
-abuse_df = pd.read_csv(ABUSE_CSV_PATH)
+abuse_df= pd.read_csv(ABUSE_PATH)
 STOPWORDS = stopwords.words('english')
 #every journy start
 

@@ -9,18 +9,27 @@ import os
 def getAbuseData():
     print("Requesting..\r")
     res = requests.get(f"https://www.bitcoinabuse.com/api/download/forever?api_token={API_TOKEN}")
-    print("Making Dataframe..\r")
-    AbuseData = pd.read_csv(StringIO(res.content.decode('utf-8')), error_bad_lines=False)
+    return res
+
+
+def lang_detect(row):
+    try:
+        lang = langdetect.detect(row)
+    except (langdetect.lang_detect_exception.LangDetectException, TypeError) as err:
+        lang = None
+    return lang
+
+
+def req_to_df(request):
+    AbuseData = pd.read_csv(StringIO(request.content.decode('utf-8')), error_bad_lines=False)
     AbuseData.description = AbuseData.description.astype("string")
-    print("Saving..\r")
+    AbuseData["language"] = AbuseData.description.apply(lang_detect)
     with open(ABUSE_PATH, 'w') as i:
         AbuseData.to_csv(i)
 
-def leng_detect(row):
-    try:
-        lang = langdetect.detect(row)
-    except langdetect.lang_detect_exception.LangDetectException:
-        lang = None
-    return lang
+
+if __name__ == "__main__":
+    req_to_df(getAbuseData())
+
 
 
