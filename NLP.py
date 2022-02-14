@@ -3,7 +3,7 @@ import nltk
 import string
 import pandas as pd
 from nltk.corpus import stopwords
-from PATHS import ABUSE_CSV_PATH, SATOSHI
+from PATHS import ABUSE_PATH, SATOSHI
 from nltk.stem import PorterStemmer
 from nltk.probability import FreqDist as FD
 

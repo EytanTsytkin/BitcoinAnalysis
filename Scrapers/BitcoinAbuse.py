@@ -19,7 +19,6 @@ def getAbuseData():
 def leng_detect(row):
     try:
         lang = langdetect.detect(row)
-
     except langdetect.lang_detect_exception.LangDetectException:
         lang = None
     return lang
