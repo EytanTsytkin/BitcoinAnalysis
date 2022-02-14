@@ -1,4 +1,4 @@
-ABUSE_PATH = '/root/abuse_data'
+ABUSE_PATH = '/root/abuse_data/abuse.csv'
 ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
 CONFIG_PATH = '/root/config.json'
 CLUSTER_PATH = '/root/BlockSci/docs/reference/clustering'

@@ -3,7 +3,7 @@ import nltk
 import string
 import pandas as pd
 from nltk.corpus import stopwords
-from PATHS import ABUSE_PATH, SATOSHI
+from PATHS import ABUSE_CSV_PATH, SATOSHI
 from nltk.stem import PorterStemmer
 from nltk.probability import FreqDist as FD
 
@@ -14,11 +14,11 @@ nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
 
 
-abuse_df = pd.read_csv(ABUSE_PATH)
+abuse_df = pd.read_csv(ABUSE_CSV_PATH)
 STOPWORDS = stopwords.words('english')
 #every journy start
 
-
+# boolean if the string starts with https small_vec.map(lambda x: not x.startswith("https"))
 def clean_tokens(list_of_tokens):
     filtered_list = [word for word in list_of_tokens if not (word in STOPWORDS or word in string.punctuation)]
     return filtered_list

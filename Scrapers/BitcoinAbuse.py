@@ -1,10 +1,9 @@
 import requests
 import pandas as pd
 from io import StringIO
-
+import langdetect
 from PATHS import *
 import os
-
 
 
 def getAbuseData():
@@ -17,6 +16,12 @@ def getAbuseData():
     with open(ABUSE_PATH, 'w') as i:
         AbuseData.to_csv(i)
 
+def leng_detect(row):
+    try:
+        lang = langdetect.detect(row)
 
+    except langdetect.lang_detect_exception.LangDetectException:
+        lang = None
+    return lang
 
 
