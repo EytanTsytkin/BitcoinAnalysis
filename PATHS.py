@@ -1,5 +1,5 @@
 ABUSE_PATH = '/root/abuse_data/abuse.csv'
-ABUSE_CORPUS_PATH = '/root/abuse_data/abuse_corpus.csv'
+ABUSE_CORPUS_PATH = '/root/abuse_data/abuse_corpus.mm'
 ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
 CONFIG_PATH = '/root/config.json'
 CLUSTER_PATH = '/root/BlockSci/docs/reference/clustering'

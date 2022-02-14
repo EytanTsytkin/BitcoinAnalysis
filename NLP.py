@@ -5,6 +5,7 @@ import pandas as pd
 from nltk.corpus import stopwords
 from collections import defaultdict
 from PATHS import *
+from gensim import corpora,similarities,models
 import json
 from nltk.stem import PorterStemmer
 
@@ -17,6 +18,7 @@ nltk.download('averaged_perceptron_tagger')
 
 frequency_dict = defaultdict(int)
 abuse_df = pd.read_csv(ABUSE_PATH)
+abuse_df.description = abuse_df.description.astype("string")
 STOPWORDS = stopwords.words('english')
 #every journy start
 
@@ -45,8 +47,7 @@ def remove_rare_words(list_of_tokens,n):
 
 
 def create_tokens(series):
-    str_series = series.astype("string")
-    str_series = str_series.str.lower()
+    str_series = series.str.lower()
     print("Converted to strings..\r")
     token_series = str_series.apply(nltk.word_tokenize)
     print("Tokenizing..\r")
@@ -63,12 +64,15 @@ def create_tokens(series):
 
 def save_processed_corups_and_freq_dict_in_english():
     print("Making tokens..\r")
-    corpus_series = create_tokens(select_language_with_iso639_1("en", abuse_df))
-    print("Saving..\r")
-    with open(ABUSE_CORPUS_PATH, 'a') as i:
-        corpus_series.to_csv(i)
-        i.close()
-    with open(FREQ_DICT_EN,'w') as i:
-        json.dump(frequency_dict,i)
+    english_abuse = select_language_with_iso639_1("en", abuse_df)
+    corpus_series = create_tokens(english_abuse.description)
+
     print(f"Saved. Total size {os.path.getsize(ABUSE_CORPUS_PATH)}\r")
 
+
+def lda_npl_algo(final_sent_tokens):
+    dictionary = corpora.Dictionary(final_sent_tokens)
+    corpus = [dictionary.doc2bow(text) for text in final_sent_tokens]
+    #to save corpus corpora.MmCorpus.serialize('/root/abuse_data/abuse_corpus.mm', corpus)
+    model = models.LdaModel(corpus, id2word=dictionary, num_topics=20)
+    index = similarities.MatrixSimilarity(model[corpus])
