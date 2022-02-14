@@ -24,12 +24,12 @@ def req_to_df(request):
     AbuseData = pd.read_csv(StringIO(request.content.decode('utf-8')), error_bad_lines=False)
     AbuseData.description = AbuseData.description.astype("string")
     AbuseData["language"] = AbuseData.description.apply(lang_detect)
+    AbuseData.dropna(subset=["language"], inplace=True)
     with open(ABUSE_PATH, 'w') as i:
         AbuseData.to_csv(i)
 
 
-if __name__ == "__main__":
-    req_to_df(getAbuseData())
+
 
 
 
