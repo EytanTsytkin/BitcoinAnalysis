@@ -1,3 +1,4 @@
+import os
 import time
 import json
 import random
@@ -34,6 +35,16 @@ class AddressBook:
 
     def update_block(self, block: blocksci.Block, save = False):
         print(f'Reading block: {block.hash.__str__()}',end='\r')
+        if block.height%2500 == 0:
+            print(f'Reached block no.{block.height}')
+            count = 0
+            for key,val in self.address_book.items():
+                if 'wallet_vector' in val.keys() and type(val['wallet_vector']) ==  pd.DataFrame:
+                    count += 1
+                    with open('/mnt/address_vectors/'+str(key)+'.csv','w') as f:
+                        val['wallet_vector'].to_csv(f)
+            with open('/mnt/address_vectors/logs.txt','a') as log:
+                log.write(f'\n {time.time()} --- Reached block no.{block.height}, hash: {block.hash}. Total address with wallet vectors: {count} ---')
         for idx, tx in enumerate(block.txes.to_list()):
             ins_outs_list = self.tx_to_address_list(tx)
             [self.write_tx(add[0],add[1],add[2],idx,tx) for add in ins_outs_list]
@@ -58,25 +69,52 @@ class AddressBook:
         :return: no return - updates the
         """
         print(f'Found {address} in tx no.{tx_idx_in_block}', end='\r')
-        self.address_book[address]['wallet_vector'] = self.address_book[address]['wallet_vector'].append(
-            {'type': tx_type,
-             'valueBTC': self.get_value(tx, tx_type, address_idx_in_tx),
-             'valueUSD': 0,
-             'time': tx.block_time},
-            ignore_index=True)
+        try:
+            if 'wallet_vector' in self.address_book[address].keys() and self.address_book[address]['wallet_vector'] is not None:
+                tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
+                self.address_book[address]['wallet_vector'] = self.address_book[address]['wallet_vector'].append(
+                    {'type': tx_type,
+                     'valueBTC': tx_value,
+                     'valueUSD': 0,
+                     'feeBTC:': (tx_value/tx.input_value) * tx.fee if tx_type == -1 else 0,
+                     'feeUSD': 0,
+                     'time': tx.block_time,
+                     'hash':tx.hash.__str__()},
+                    ignore_index=True)
+            else:
+                self.make_wallet_vector(address)
+                print(f'Added wallet vector for {address}', end='\r')
+                tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
+                self.address_book[address]['wallet_vector'] = self.address_book[address]['wallet_vector'].append(
+                    {'type': tx_type,
+                     'valueBTC': tx_value,
+                     'valueUSD': 0,
+                     'feeBTC:': (tx_value/tx.input_value) * tx.fee if tx_type == -1 else 0,
+                     'feeUSD': 0,
+                     'time': tx.block_time,
+                     'hash':tx.hash.__str__()},
+                    ignore_index=True)
+        except Exception as e:
+            print(e)
 
 
-    def get_value(self,tx: blocksci.Tx ,type:int, index: int):
+    def make_wallet_vector(self, address: str):
+        self.address_book[address]['wallet_vector'] = pd.DataFrame(columns=['type', 'valueBTC','valueUSD','feeBTC','feeUSD','time','hash'])
+
+    def get_value(self,tx: blocksci.Tx ,tx_type:int, index: int):
         """
         :param tx: Tx object
         :param type: input / output, ±1
         :param index: index of wallet in this tx.
         :return: The amount transacted in/out of this wallet.
         """
-        if type ==  -1:
-            return tx.ins.value[index] * SATOSHI
-        elif type == 1:
-            return tx.outs.value[index] * SATOSHI
+        try:
+            if tx_type ==  -1:
+                return tx.ins.value[index] * SATOSHI
+            elif tx_type == 1:
+                return tx.outs.value[index] * SATOSHI
+        except Exception as e:
+            print(e)
 
 
     def tx_to_address_list(self,tx: blocksci.Tx):
@@ -87,25 +125,15 @@ class AddressBook:
                                       index in tx (used for value extraction)
 
         """
-        # ins_list = []
-        # outs_list = []
-        # if hasattr(tx.ins.address, 'to_list'):
-        #     for address in tx.ins.address.to_list():
-        #         if hasattr(address, 'address_string'):
-        #             ins_list.append(address.address_string)
-        # if hasattr(tx.outs.address, 'to_list'):
-        #     for address in tx.outs.address.to_list():
-        #         if hasattr(address, 'address_string'):
-        #             outs_list.append(address.address_string)
         if hasattr(tx.ins.address, 'to_list'):
-            ins_list = [(address.address_string,1,in_idx) for in_idx, address in enumerate(tx.ins.address.to_list())
+            ins_list = [(address.address_string,-1,in_idx) for in_idx, address in enumerate(tx.ins.address.to_list())
                         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
-            outs_list = [(address.address_string,-1,out_idx) for out_idx, address in enumerate(tx.outs.address.to_list())
+            outs_list = [(address.address_string,1,out_idx) for out_idx, address in enumerate(tx.outs.address.to_list())
                          if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
         return ins_list+outs_list
 
 
-    def updateWalletVector(self,wallet_vector: pandas.DataFrame):
+    def updateWalletVector(self,wallet_vector: pd.DataFrame):
         """
         :param wallet_vector: A pandas dataframe holding the timeseries of a wallet.
         :return: no return. updates the ValueUSD column.
@@ -130,17 +158,12 @@ class AddressBook:
 
 
 
-def test_update(n):
+def test_update():
     ab = AddressBook()
-    ab.update_addresses = set(random.sample(ab.address_book.keys(), n))
+    ab.update_addresses = set(ab.address_book.keys())
     chain = blocksci.Blockchain('/root/config.json')
-    b = [chain.address_from_string(ad).first_tx.block.hash.__str__() for ad in ab.update_addresses]
-    blocks = list(filter((lambda block: block.hash.__str__() in b), chain.blocks.to_list()))
-    for block in blocks:
-        ab.update_block(block)
-    for ad in ab.update_addresses:
-        print(ab.address_book[ad]['wallet_vector'])
-    for ad in ab.update_addresses:
-        ab.updateWalletVector(ab.address_book[ad]['wallet_vector'])
-        print(ab.address_book[ad]['wallet_vector'])
+    [ab.update_block(block) for block in chain.blocks]
     return ab
+
+ab = test_update()
+
