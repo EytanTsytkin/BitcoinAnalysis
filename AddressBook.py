@@ -7,8 +7,9 @@ import datetime
 import numpy as np
 import pandas as pd
 from PATHS import *
-from multiprocessing import Pool
+from  multiprocessing import Pool
 from matplotlib import pyplot as plt
+from concurrent.futures import ThreadPoolExecutor
 
 
 class AddressBook:
@@ -20,7 +21,9 @@ class AddressBook:
                                                       end=datetime.date(2021, 1, 31))
         self.found_wallets = set()
         self.found_txes = 0
-        self.pool = Pool(processes=4)
+        #self.pool = Pool(processes=16)
+        #self.executor = ThreadPoolExecutor(3)
+
 
     @staticmethod
     def load_book():
@@ -43,12 +46,15 @@ class AddressBook:
                 f'Txes found: {self.found_txes} ->')
 
 
-    def update_range_multiproc(self, block: blocksci.Block):
-        print(f'Reading block: {block.hash.__str__()}', end='\r')
-        if block.height % 2500 == 0:
-            print(f'Reached block no.{block.height}')
-        [self.write_tx(add[0], add[1], add[2], idx, tx) for idx, tx in enumerate(block.txes.to_list()) for add in
-         self.multi_tx_to_address_list(tx)]
+    def update_range_multiproc(self,addresses,start=None,stop=None):
+        self.update_addresses = set(addresses)
+        chain = blocksci.Blockchain('/root/config.json')
+        self.found_wallets = set()
+        self.found_txes = 0
+        print(f'Running on {stop - start} blocks. First block is {start}.')
+        t = time.time()
+        chain.mapreduce_blocks(self.update_block,start=start,end=stop,cpu_count=4)
+        print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
 
 
     def update_range(self,addresses,start=None,stop=None):
@@ -74,13 +80,16 @@ class AddressBook:
             [self.update_block(block) for block in chain.blocks]
         print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
 
+
     def update_block(self, block: blocksci.Block):
         print(f'Reading block: {block.hash.__str__()}. Txes found so far: {self.found_txes}.', end='\r')
+        t = time.time()
         if block.height % 2500 == 0:
             print(f'Reached block no.{block.height}')
             self.backup(block)
         [self.write_tx(add[0], add[1], add[2], idx, tx) for idx, tx in enumerate(block.txes.to_list()) for add in
              self.tx_to_address_list(tx)]
+        print(f'Done in {time.time()-t} seconds.')
 
 
     def write_tx(self, address: str, tx_type: int, address_idx_in_tx: int, tx_idx_in_block: int, tx: blocksci.Tx):
@@ -164,24 +173,24 @@ class AddressBook:
                          if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
         return ins_list + outs_list
 
+    # def multi_tx_to_address_list(self, tx: blocksci.Tx):
+    #     """
+    #     :param tx: Blocksci tx
+    #     :return: list of tuples of 3: address,
+    #                                   type (±1)
+    #                                   index in tx (used for value extraction)
+    #     """
+    #     if hasattr(tx.ins.address, 'to_list'):
+    #         ins_list = [self.pool.map(lambda idx, address: (address.address_string, -1, idx)
+    #         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
+    #                                   , enumerate(tx.ins.address.to_list()))
+    #                     ]
+    #         outs_list = [self.pool.map(lambda idx, address: (address.address_string, 1, idx)
+    #         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
+    #                                    , enumerate(tx.outs.address.to_list()))
+    #                      ]
+    #     return ins_list + outs_list
 
-    def multi_tx_to_address_list(self, tx: blocksci.Tx):
-        """
-        :param tx: Blocksci tx
-        :return: list of tuples of 3: address,
-                                      type (±1)
-                                      index in tx (used for value extraction)
-        """
-        if hasattr(tx.ins.address, 'to_list'):
-            ins_list = [self.pool.map(lambda idx, address: (address.address_string, -1, idx)
-            if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
-                                      , enumerate(tx.ins.address.to_list()))
-                        ]
-            outs_list = [self.pool.map(lambda idx, address: (address.address_string, 1, idx)
-            if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
-                                       , enumerate(tx.outs.address.to_list()))
-                         ]
-        return ins_list + outs_list
 
 
     def updateWalletVector(self, wallet_vector: pd.DataFrame):
@@ -237,7 +246,57 @@ class AddressBook:
             plt.show()
 
 
+def test_n_times_multi(n,start,stop):
+    test_results = []
+    for test in range(n):
+        test_results.append(test_multi_update(start, stop))
+    return test_results
 
 
-ab = AddressBook()
-ab.update_range(ab.address_book.keys(),start=190000,stop=195001)
+def test_n_times(n,start,stop):
+    test_results = []
+    for test in range(n):
+        test_results.append(test_update(start,stop))
+    return test_results
+
+def test_update(start,stop):
+    ab = AddressBook()
+    t =time.time()
+    ab.update_range(ab.address_book.keys(),start=start,stop=stop)
+    print(f'Total time for 100 blocks:{time.time()-t}')
+    return time.time()-t
+
+
+def test_multi_update(start,stop):
+    ab = AddressBook()
+    t =time.time()
+    ab.update_range_multiproc(ab.address_book.keys(),start=start,stop=stop)
+    print(f'Total time for 100 blocks:{time.time()-t}')
+    return time.time()-t
+
+# Results for blocks 190000-190100, single thread
+res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
+
+# Results for blocks 190000-190100, single thread, no list comprehension for blocks:
+res2 = [57.13825750350952, 56.91519618034363, 57.32981038093567]
+
+# Results for blocks 190000-190100, 16 threads:
+res3 = [68.33737421035767, 68.18032550811768, 68.81083369255066]
+
+# Results for blocks 190000-190100, 3 threads:
+res4 = [66.5042371749878, 66.51269555091858, 66.48649406433105]
+
+# Results for blocks 190000-190100, 4 cpu, blocksci. map blocks:
+res5 = [28.303866624832153, 27.49988317489624, 27.342219591140747]
+
+# Results for blocks 190000-190100, single thread with higher open files limit-
+#res6 = similar to res 1, slightly better
+
+# Results for blocks 190000-190100, 8 cpu, blocksci. map blocks:
+res7 = [32.515013456344604, 32.351489782333374, 32.329580545425415]
+
+# Results for blocks 190000-190100, 2 cpu, blocksci. map blocks:
+res8 = [34.220452070236206, 33.99496340751648, 33.794970989227295]
+
+# Results for blocks 190000-190100, 5 cpu, blocksci. map blocks:
+res9 = [28.276405334472656, 29.267545700073242, 28.557278871536255]
