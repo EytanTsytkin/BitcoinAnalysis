@@ -9,6 +9,9 @@ from PATHS import *
 from gensim import corpora, similarities, models, utils
 from gensim.models.phrases import ENGLISH_CONNECTOR_WORDS
 import json
+from ast import literal_eval
+#texts = pd.read_csv("/root/abuse_data/texts.csv",usecols=["description"],converters={"description":literal_eval})
+# id2word = corpora.Dictionary.load("/root/abuse_data/id2word.dict")
 from nltk.stem import PorterStemmer
 
 
@@ -22,7 +25,7 @@ nlp = spacy.load("en_core_web_sm",disable=['parser', 'ner'])
 frequency_dict = defaultdict(int)
 abuse_df = pd.read_csv(ABUSE_PATH)
 abuse_df.description = abuse_df.description.astype("string")
-STOPWORDS = stopwords.words('english')
+
 #every journy start
 
 
@@ -36,9 +39,10 @@ def select_language_with_iso639_1(lang,abuse_data):
 
 
 def clean_tokens(list_of_tokens):
+    stpwords = stopwords.words('english')
     filtered_list = []
     for word in list_of_tokens:
-        if not (word in STOPWORDS or word in string.punctuation):
+        if not (word in stpwords or word in string.punctuation):
             filtered_list.append(word)
             frequency_dict[word]+=1
     return filtered_list
@@ -109,3 +113,38 @@ def save_processed_corups_and_freq_dict_in_english():
 #     #to save corpus corpora.MmCorpus.serialize('/root/abuse_data/abuse_corpus.mm', corpus)
 #     model = models.LdaModel(corpus, id2word=dictionary, num_topics=20)
 #     index = similarities.MatrixSimilarity(model[corpus])
+
+
+def compute_coherence_values(dictionary, corpus, texts, limit=20, start=5, step=2):
+    """
+    Compute c_v coherence for various number of topics
+
+    Parameters:
+    ----------
+    dictionary : Gensim dictionary
+    corpus : Gensim corpus
+    texts : List of input texts
+    limit : Max num of topics
+
+    Returns:
+    -------
+    model_list : List of LDA topic models
+    coherence_values : Coherence values corresponding to the LDA model with respective number of topics
+    """
+    coherence_values = []
+    model_list = []
+    for num_topics in range(start, limit, step):
+        model = models.ldamulticore.LdaMulticore(
+            corpus=corpus,
+            num_topics=20,
+            id2word=dictionary,
+            chunksize=100,
+            workers=7, # Num. Processing Cores - 1
+            passes=50,
+            eval_every = 1,
+            per_word_topics=True)
+        model_list.append(model)
+        coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
+        coherence_values.append(coherencemodel.get_coherence())
+
+    return model_list, coherence_values
