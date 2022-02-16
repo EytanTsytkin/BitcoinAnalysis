@@ -24,7 +24,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="credentialsType com.jetbrains.python.remote.PyCreateRemoteInterpreterDialog$PyCreateRemoteSdkForm" value="Web Deployment" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="vcs.Git" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -37,6 +37,7 @@
       <workItem from="1644694912975" duration="2685000" />
       <workItem from="1644859347361" duration="6904000" />
       <workItem from="1644945422089" duration="11112000" />
+      <workItem from="1644975158282" duration="174000" />
     </task>
     <task id="LOCAL-00001" summary="Changing update block to list comprehansion">
       <created>1644859915999</created>
