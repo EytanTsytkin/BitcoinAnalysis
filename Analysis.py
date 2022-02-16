@@ -64,7 +64,7 @@ def VT_VecScore(VTVec):
 def plotValueTimeSeries(address,timeSeries,size,save=False,type=None):
     plt.close()
     scatter = plt.scatter(timeSeries["time"],
-                          timeSeries["value"],
+                          timeSeries["valueBTC"],
                           c=timeSeries["type"],
                           cmap='coolwarm',
                           s=size)
