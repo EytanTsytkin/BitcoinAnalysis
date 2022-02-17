@@ -12,7 +12,7 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
-ADDRESS_VECTORS_PATH = '/root/address_vectors_test/'
+ADDRESS_VECTORS_PATH = '/root/address_vectors_test2/'
 
 class AddressBook:
     def __init__(self):
@@ -270,7 +270,7 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
-test_update(None,None,checkpoint=135000)
+
 # # Results for blocks 190000-190100, single thread
 # res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
 #
@@ -282,7 +282,7 @@ test_update(None,None,checkpoint=135000)
 #
 # # Results for blocks 190000-190100, 3 threads:
 # res4 = [66.5042371749878, 66.51269555091858, 66.48649406433105]
-#
+#:
 # # Results for blocks 190000-190100, 4 cpu, blocksci. map blocks:
 # res5 = [28.303866624832153, 27.49988317489624, 27.342219591140747]
 #
@@ -306,4 +306,6 @@ test_update(None,None,checkpoint=135000)
 #
 # # Results for blocks 190000-190100, 8 cpu, blocksci. map blocks, writecsv instead of memory:
 # res12 = [25.467056035995483, 25.344855785369873, 25.35331916809082]
+if __name__ == '__main__':
+    test_update(None,end=290000)
 
