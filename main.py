@@ -31,9 +31,10 @@ class AddressBook:
         #         'wallet_vector': pd.DataFrame(columns=['type', 'valueBTC','valueUSD', 'time'])
         #     }
         # return dictionary
-
+    def
 
     def update_block(self, block: blocksci.Block, save = False):
+        t = time.time()
         print(f'Reading block: {block.hash.__str__()}',end='\r')
         if block.height%2500 == 0:
             print(f'Reached block no.{block.height}')
@@ -44,7 +45,7 @@ class AddressBook:
                     with open('/mnt/address_vectors/'+str(key)+'.csv','w') as f:
                         val['wallet_vector'].to_csv(f)
             with open('/mnt/address_vectors/logs.txt','a') as log:
-                log.write(f'\n {time.time()} --- Reached block no.{block.height}, hash: {block.hash}. Total address with wallet vectors: {count} ---')
+                log.write(f'\n {time.time()} --- Reached block no.{block.height}, Duration: {time.time()-t}. Total address with wallet vectors: {count} ---')
         for idx, tx in enumerate(block.txes.to_list()):
             ins_outs_list = self.tx_to_address_list(tx)
             [self.write_tx(add[0],add[1],add[2],idx,tx) for add in ins_outs_list]

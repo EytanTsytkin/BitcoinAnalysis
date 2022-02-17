@@ -1,3 +1,4 @@
+import csv
 import os
 import time
 import json
@@ -11,6 +12,7 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
+ADDRESS_VECTORS_PATH = '/mnt/address_vectors3/'
 
 class AddressBook:
     def __init__(self):
@@ -32,16 +34,17 @@ class AddressBook:
             return book
 
     def backup(self,block: blocksci.Block):
+        t = time.time()
         tot_wallets = len(self.found_wallets)
-        for key, val in self.address_book.items():
-            if 'wallet_vector' in val.keys() and type(val['wallet_vector']) == pd.DataFrame:
-                val['wallet_vector'] = self.updateWalletVector(val['wallet_vector'])
-                with open('/mnt/address_vectors3/' + str(key) + '.csv', 'w') as f:
-                    val['wallet_vector'].to_csv(f)
+        # for key, val in self.address_book.items():
+        #     if 'wallet_vector' in val.keys() and type(val['wallet_vector']) == pd.DataFrame:
+        #         val['wallet_vector'] = self.updateWalletVector(val['wallet_vector'])
+        #         with open('/mnt/address_vectors4/' + str(key) + '.csv', 'w') as f:
+        #             val['wallet_vector'].to_csv(f)
         with open('/mnt/address_vectors3/logs.txt', 'a') as log:
             log.write(
                 f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
-                f'<- Reached block no.{block.height}, hash: {block.hash}. '
+                f'<- Reached block no.{block.height}, Duration: {time.time()-t}. '
                 f'Wallets found: {tot_wallets}. '
                 f'Txes found: {self.found_txes} ->')
 
@@ -53,7 +56,7 @@ class AddressBook:
         self.found_txes = 0
         print(f'Running on {stop - start} blocks. First block is {start}.')
         t = time.time()
-        chain.mapreduce_blocks(self.update_block,start=start,end=stop,cpu_count=4)
+        chain.map_blocks(self.update_block,start=start,end=stop,cpu_count=4)
         print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
 
 
@@ -78,18 +81,18 @@ class AddressBook:
             print(f'Running on all blocks. Good luck my friend.')
             t = time.time()
             [self.update_block(block) for block in chain.blocks]
-        print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
+        print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.',end='\r')
 
 
     def update_block(self, block: blocksci.Block):
         print(f'Reading block: {block.hash.__str__()}. Txes found so far: {self.found_txes}.', end='\r')
         t = time.time()
-        if block.height % 2500 == 0:
+        if block.height % 5000 == 0:
             print(f'Reached block no.{block.height}')
             self.backup(block)
         [self.write_tx(add[0], add[1], add[2], idx, tx) for idx, tx in enumerate(block.txes.to_list()) for add in
              self.tx_to_address_list(tx)]
-        print(f'Done in {time.time()-t} seconds.')
+        print(f'Done in {time.time()-t} seconds.',end='\r')
 
 
     def write_tx(self, address: str, tx_type: int, address_idx_in_tx: int, tx_idx_in_block: int, tx: blocksci.Tx):
@@ -102,44 +105,32 @@ class AddressBook:
         :param tx: the Tx object.
         :return: no return - updates the
         """
-        print(f'Found {address} in tx no.{tx_idx_in_block}', end='\r')
+
         self.found_txes += 1
-        self.found_wallets.add(address)
+        if not address in self.found_wallets:
+            self.make_wallet_vector(address)
+            self.found_wallets.add(address)
+            print(f'Added wallet vector for {address}', end='\r', )
         try:
-            if 'wallet_vector' in self.address_book[address].keys() and self.address_book[address][
-                'wallet_vector'] is not None:
-                tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
-                self.address_book[address]['wallet_vector'] = self.address_book[address]['wallet_vector'].append(
-                    {'tx_type': tx_type,
-                     'valueBTC': tx_value,
-                     'valueUSD': 0,
-                     'feeBTC:': (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
-                     'feeUSD': 0,
-                     'time': tx.block_time,
-                     'hash': tx.hash.__str__(),
-                     'tx_index': tx.index},
-                    ignore_index=True)
-            else:
-                self.make_wallet_vector(address)
-                print(f'Added wallet vector for {address}', end='\r')
-                tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
-                self.address_book[address]['wallet_vector'] = self.address_book[address]['wallet_vector'].append(
-                    {'tx_type': tx_type,
-                     'valueBTC': tx_value,
-                     'valueUSD': 0,
-                     'feeBTC:': (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
-                     'feeUSD': 0,
-                     'time': tx.block_time,
-                     'hash': tx.hash.__str__(),
-                     'tx_index':tx.index},
-                    ignore_index=True)
+            tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
+            with open(os.path.join(ADDRESS_VECTORS_PATH, address + '.csv'), 'a') as f:
+                csv.writer(f).writerow([tx_type,
+                                        tx_value,
+                                         0,
+                                         (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
+                                         0,
+                                         tx.block_time,
+                                         tx.hash.__str__(),
+                                         tx.index])
+            print(f'Added {address} in tx no.{tx_idx_in_block}', end='\r')
         except Exception as e:
             print(e)
 
 
     def make_wallet_vector(self, address: str):
-        self.address_book[address]['wallet_vector'] = pd.DataFrame(
-            columns=['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash','tx_index'])
+        with open(os.path.join(ADDRESS_VECTORS_PATH,address+'.csv'),'w') as f:
+            csv.writer(f).writerow(['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash','tx_index'])
+            f.close()
 
 
     def get_value(self, tx: blocksci.Tx, tx_type: int, index: int):
@@ -274,29 +265,40 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
-# Results for blocks 190000-190100, single thread
-res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
+test_update(None,None)
+# # Results for blocks 190000-190100, single thread
+# res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
+#
+# # Results for blocks 190000-190100, single thread, no list comprehension for blocks:
+# res2 = [57.13825750350952, 56.91519618034363, 57.32981038093567]
+#
+# # Results for blocks 190000-190100, 16 threads:
+# res3 = [68.33737421035767, 68.18032550811768, 68.81083369255066]
+#
+# # Results for blocks 190000-190100, 3 threads:
+# res4 = [66.5042371749878, 66.51269555091858, 66.48649406433105]
+#
+# # Results for blocks 190000-190100, 4 cpu, blocksci. map blocks:
+# res5 = [28.303866624832153, 27.49988317489624, 27.342219591140747]
+#
+# # Results for blocks 190000-190100, single thread with higher open files limit-
+# #res6 = similar to res 1, slightly better
+#
+# # Results for blocks 190000-190100, 8 cpu, blocksci. map blocks:
+# res7 = [32.515013456344604, 32.351489782333374, 32.329580545425415]
+#
+# # Results for blocks 190000-190100, 2 cpu, blocksci. map blocks:
+# res8 = [34.220452070236206, 33.99496340751648, 33.794970989227295]
+#
+# # Results for blocks 190000-190100, 5 cpu, blocksci. map blocks:
+# res9 = [28.276405334472656, 29.267545700073242, 28.557278871536255]
+#
+# # Results for blocks 190000-190100, 4 cpu, blocksci. map blocks, writecsv instead of memory:
+# res10 = [16.83560299873352]
+#
+# # Results for blocks 190000-190100, 1 cpu, writecsv instead of memory:
+# res11 = [17.29053258895874]
+#
+# # Results for blocks 190000-190100, 8 cpu, blocksci. map blocks, writecsv instead of memory:
+# res12 = [25.467056035995483, 25.344855785369873, 25.35331916809082]
 
-# Results for blocks 190000-190100, single thread, no list comprehension for blocks:
-res2 = [57.13825750350952, 56.91519618034363, 57.32981038093567]
-
-# Results for blocks 190000-190100, 16 threads:
-res3 = [68.33737421035767, 68.18032550811768, 68.81083369255066]
-
-# Results for blocks 190000-190100, 3 threads:
-res4 = [66.5042371749878, 66.51269555091858, 66.48649406433105]
-
-# Results for blocks 190000-190100, 4 cpu, blocksci. map blocks:
-res5 = [28.303866624832153, 27.49988317489624, 27.342219591140747]
-
-# Results for blocks 190000-190100, single thread with higher open files limit-
-#res6 = similar to res 1, slightly better
-
-# Results for blocks 190000-190100, 8 cpu, blocksci. map blocks:
-res7 = [32.515013456344604, 32.351489782333374, 32.329580545425415]
-
-# Results for blocks 190000-190100, 2 cpu, blocksci. map blocks:
-res8 = [34.220452070236206, 33.99496340751648, 33.794970989227295]
-
-# Results for blocks 190000-190100, 5 cpu, blocksci. map blocks:
-res9 = [28.276405334472656, 29.267545700073242, 28.557278871536255]
