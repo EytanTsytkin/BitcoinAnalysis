@@ -12,7 +12,7 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
-ADDRESS_VECTORS_PATH = '/mnt/address_vectors3/'
+ADDRESS_VECTORS_PATH = '/root/address_vectors_test/'
 
 class AddressBook:
     def __init__(self):
@@ -41,7 +41,7 @@ class AddressBook:
         #         val['wallet_vector'] = self.updateWalletVector(val['wallet_vector'])
         #         with open('/mnt/address_vectors4/' + str(key) + '.csv', 'w') as f:
         #             val['wallet_vector'].to_csv(f)
-        with open('/mnt/address_vectors3/logs.txt', 'a') as log:
+        with open('/root/address_vectors_test/logs.txt', 'a') as log:
             log.write(
                 f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
                 f'<- Reached block no.{block.height}, Duration: {time.time()-t}. '
@@ -250,10 +250,15 @@ def test_n_times(n,start,stop):
         test_results.append(test_update(start,stop))
     return test_results
 
-def test_update(start,stop):
+def test_update(start,stop,checkpoint=None):
     ab = AddressBook()
     t =time.time()
-    ab.update_range(ab.address_book.keys(),start=start,stop=stop)
+    if checkpoint:
+        ab.found_wallets=set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_PATH)])
+        print(f'Starting with {len(ab.found_wallets)}.')
+        ab.update_range(ab.address_book.keys(), start=checkpoint, stop=stop)
+    else:
+        ab.update_range(ab.address_book.keys(),start=start,stop=stop)
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
@@ -265,7 +270,7 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
-test_update(None,None)
+test_update(None,None,checkpoint=135000)
 # # Results for blocks 190000-190100, single thread
 # res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
 #

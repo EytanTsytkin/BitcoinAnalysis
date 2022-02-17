@@ -1,7 +1,7 @@
 ABUSE_PATH = '/root/abuse_data/abuse.csv'
 ABUSE_CORPUS_PATH = '/root/abuse_data/abuse_corpus.mm'
 ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
-ADDRESS_VECTORS_PATH = '/mnt/address_vectors3/'
+ADDRESS_VECTORS_PATH = '/root/address_vectors_test/'
 CONFIG_PATH = '/root/config.json'
 CLUSTER_PATH = '/root/BlockSci/docs/reference/clustering'
 FREQ_DICT_EN = '/root/abuse_data/english_freq_dict.json'
