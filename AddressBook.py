@@ -41,7 +41,7 @@ class AddressBook:
         #         val['wallet_vector'] = self.updateWalletVector(val['wallet_vector'])
         #         with open('/mnt/address_vectors4/' + str(key) + '.csv', 'w') as f:
         #             val['wallet_vector'].to_csv(f)
-        with open('/root/address_vectors_test/logs.txt', 'a') as log:
+        with open('/root/address_vectors_test2/logs.txt', 'a') as log:
             log.write(
                 f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
                 f'<- Reached block no.{block.height}, Duration: {time.time()-t}. '
