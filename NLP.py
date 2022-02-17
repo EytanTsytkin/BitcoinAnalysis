@@ -8,7 +8,10 @@ from collections import defaultdict
 from PATHS import *
 from gensim import corpora, similarities, models, utils
 from gensim.models.phrases import ENGLISH_CONNECTOR_WORDS
+from nltk.stem import WordNetLemmatizer
 import json
+import pyLDAvis
+import pyLDAvis.gensim
 from ast import literal_eval
 #texts = pd.read_csv("/root/abuse_data/texts.csv",usecols=["description"],converters={"description":literal_eval})
 # id2word = corpora.Dictionary.load("/root/abuse_data/id2word.dict")
@@ -20,11 +23,19 @@ from nltk.stem import PorterStemmer
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 
 nlp = spacy.load("en_core_web_sm",disable=['parser', 'ner'])
 frequency_dict = defaultdict(int)
 abuse_df = pd.read_csv(ABUSE_PATH)
 abuse_df.description = abuse_df.description.astype("string")
+grammar = ('''
+          NP: {<J.*>}
+              {<N.*>}
+              {<V.*>}
+               {<RB.*>}# NP
+          ''')
 
 #every journy start
 
@@ -40,23 +51,24 @@ def select_language_with_iso639_1(lang,abuse_data):
 
 def clean_tokens(list_of_tokens):
     stpwords = stopwords.words('english')
-    filtered_list = []
-    for word in list_of_tokens:
-        if not (word in stpwords or word in string.punctuation):
-            filtered_list.append(word)
-            frequency_dict[word]+=1
+    filtered_list = [word for word in list_of_tokens if not (word in stpwords or word in string.punctuation)]
     return filtered_list
 
 
-def bigrams(words, bi_min=3, tre_min=10):
+def bigrams(words, bi_min=3, tre_min=50):
     bigram = models.Phrases(words, min_count=bi_min,threshold=tre_min,connector_words=ENGLISH_CONNECTOR_WORDS)
     bigram_mod = models.phrases.FrozenPhrases(bigram)
     return bigram_mod
 
 
-def lemmatization(sent, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
-    doc = nlp(" ".join(sent))
-    texts_out = [token.lemma_ for token in doc if token.pos_ in allowed_postags]
+def lemmatization(sent,grammer):
+    lemmatizer = WordNetLemmatizer()
+    texts_out = []
+    chunkParser = nltk.RegexpParser(grammer)
+    for subtree in (chunkParser.parse(nltk.pos_tag(sent))).subtrees(lambda x:x.label()=="NP"):
+        for word in subtree:
+            texts_out.append(lemmatizer.lemmatize(word[0]))
+            frequency_dict[lemmatizer.lemmatize(word[0])] += 1
     return texts_out
 
 
@@ -75,17 +87,19 @@ def create_corpus(series):
     token_series = str_series.apply(utils.simple_preprocess,deacc=True)
     print("Filetring..\r")
     filtered_token_series = token_series.apply(clean_tokens)
+    filtered_token_series = filtered_token_series.loc[filtered_token_series.astype(bool)]
     print("create bigram model & execute..\r")
     bigram_mod = bigrams(filtered_token_series)
     bigram = filtered_token_series.apply(comput_bigram_mod, bigram_model=bigram_mod)
     print("lemmatized the bigrams..\r")
-    lemmatized_bigram = bigram.apply(lemmatization)
+    lemmatized_bigram = bigram.apply(lemmatization,grammer=grammar)
+    lemmatized_bigram = lemmatized_bigram.loc[filtered_token_series.astype(bool)]
     print("create corpora.Dictionary..\r")
     id2word = corpora.Dictionary(lemmatized_bigram)
-    id2word.filter_extremes(no_below=5, no_above=0.85)
+    id2word.filter_extremes(no_below=10, no_above=0.7)
     id2word.compactify()
     print("create corpus..\r")
-    corpus = [id2word.doc2bow(text) for text in bigram]
+    corpus = [id2word.doc2bow(text) for text in lemmatized_bigram if id2word.doc2bow(text)]
     return corpus, id2word, bigram
 # the name is english_token
 
@@ -98,9 +112,12 @@ def create_corpus(series):
 def save_processed_corups_and_freq_dict_in_english():
     print("Making tokens..\r")
     english_abuse = select_language_with_iso639_1("en", abuse_df)
-    corpus = create_corpus(english_abuse.description)
+    corpus,id2word,texts = create_corpus(english_abuse.description)
+    id2word.save("/root/abuse_data/id2word.dict")
     print("save corpus to disk..\r")
     corpora.MmCorpus.serialize(ABUSE_CORPUS_PATH, corpus)
+    id2word.save("/root/abuse_data/id2word.dict")
+    texts.to_csv("/root/abuse_data/texts.csv")
     print("save freq_dict in english to disk")
     with open(FREQ_DICT_EN,'w') as i:
         json.dump(frequency_dict, i)
@@ -144,7 +161,13 @@ def compute_coherence_values(dictionary, corpus, texts, limit=20, start=5, step=
             eval_every = 1,
             per_word_topics=True)
         model_list.append(model)
-        coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
+        coherencemodel = models.CoherenceModel(model=lda_model, texts=texts, dictionary=id2word, coherence='c_v')
+        coherencemodel.get_coherence()
         coherence_values.append(coherencemodel.get_coherence())
 
     return model_list, coherence_values
+
+
+def visual():
+    vis6= pyLDAvis.gensim.prepare(lda_model,corpus,id2word)
+    pyLDAvis.save_html(vis6,'/mnt/plots/lda_visual6')
