@@ -307,5 +307,5 @@ def test_multi_update(start,stop):
 # # Results for blocks 190000-190100, 8 cpu, blocksci. map blocks, writecsv instead of memory:
 # res12 = [25.467056035995483, 25.344855785369873, 25.35331916809082]
 if __name__ == '__main__':
-    test_update(None,380000)
+    test_update(380000,None)
 
