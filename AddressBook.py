@@ -273,7 +273,7 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
-test_update(480000,None)
+test_update(580000,None)
 # # Results for blocks 190000-190100, single thread
 # res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
 #
