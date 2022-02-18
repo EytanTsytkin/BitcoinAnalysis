@@ -33,6 +33,7 @@ class AddressBook:
             book = json.load(f)
             return book
 
+
     def backup(self,block: blocksci.Block):
         t = time.time()
         tot_wallets = len(self.found_wallets)
@@ -56,7 +57,7 @@ class AddressBook:
         t = time.time()
         for address in self.update_addresses:
             print(f'Merging {address}. So far found {found_lines} unique rows.',end='\r')
-            lines = self.merge_single_address(self, address, dirs)
+            lines = self.merge_single_address(address, dirs)
             if lines == 0:
                 print(f'Address not found. Proceeding..',end='\r')
             if lines > 0:
