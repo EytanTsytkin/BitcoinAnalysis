@@ -83,15 +83,16 @@ def makeAddressBook(Typedict):
 
 
 if __name__ == "__main__":
-    TypeDict = makeTypeSitesDict()
-    for attempt in range(10):
-        try:
-            AddressBook = makeAddressBook(TypeDict)
-            with open(ADDRESSBOOK_PATH,'w') as i:
-                print(f'Attempt:{attempt + 1}. Success. Saving...')
-                json.dump(AddressBook,i)
-                print(f'Attempt:{attempt + 1}. Done.')
-            break
-        except Exception as e:
-            print(f'Attempt:{attempt+1}. Exception:{e}. Retrying..')
-            time.sleep(10)
+    pass
+    # TypeDict = makeTypeSitesDict()
+    # for attempt in range(10):
+    #     try:
+    #         AddressBook = makeAddressBook(TypeDict)
+    #         with open(ADDRESSBOOK_PATH,'w') as i:
+    #             print(f'Attempt:{attempt + 1}. Success. Saving...')
+    #             json.dump(AddressBook,i)
+    #             print(f'Attempt:{attempt + 1}. Done.')
+    #         break
+    #     except Exception as e:
+    #         print(f'Attempt:{attempt+1}. Exception:{e}. Retrying..')
+    #         time.sleep(10)

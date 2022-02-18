@@ -12,7 +12,11 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
-
+# to do:
+# 1. Run updateWalletVector on /root/address_vectors_merged to fix first lines value == 0
+# 2. Add the tagging again to addressbook.json!
+# 3. Reformat the addressbook to hold tags instead of 'type','spec_type'...
+# 4. Maybe plot some stuff yo
 
 class AddressBook:
     def __init__(self):
@@ -55,6 +59,7 @@ class AddressBook:
         found_lines = 0
         found_addresses = 0
         t = time.time()
+        print(f'Starting merge..')
         for address in self.update_addresses:
             print(f'Merging {address}. So far found {found_lines} unique rows.',end='\r')
             lines = self.merge_single_address(address, dirs)
@@ -244,20 +249,28 @@ class AddressBook:
                 wallet_vector.iat[0, 5] = self.timeToUnix(wallet_vector.iloc[0]['time'])
 
         elif len(wallet_vector) > 1:
-            for idx in range(1, len(wallet_vector)):
-                if wallet_vector.iloc[idx]['valueUSD'] == 0:
-                    wallet_vector.iat[idx, 1] = (wallet_vector.iloc[idx]['valueBTC'] - wallet_vector.iloc[idx - 1]['valueBTC'])
-                    wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
-                                                                        wallet_vector.iloc[idx]['time'])
-                    wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
-                                                                      wallet_vector.iloc[idx]['time'])
-                    wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
+            for idx in range(len(wallet_vector)):
+                if idx == 0:
+                    if wallet_vector.iloc[idx]['valueUSD'] == 0:
+                        wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
+                                                                            wallet_vector.iloc[idx]['time'])
+                        wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
+                                                                            wallet_vector.iloc[idx]['time'])
+                        wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
+                else:
+                    if wallet_vector.iloc[idx]['valueUSD'] == 0:
+                        wallet_vector.iat[idx, 1] = (wallet_vector.iloc[idx]['valueBTC'] - wallet_vector.iloc[idx - 1]['valueBTC'])
+                        wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
+                                                                            wallet_vector.iloc[idx]['time'])
+                        wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
+                                                                          wallet_vector.iloc[idx]['time'])
+                        wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
         return wallet_vector
 
 
     @staticmethod
-    def timeToUnix(datetime):
-        return time.mktime(datetime.timetuple())
+    def timeToUnix(date_time):
+        return time.mktime(datetime.datetime.strptime(date_time,"%Y-%m-%d %H:%M:%S").timetuple())
 
 
     def plotValueTimeSeries(self, address, wallet_vector, size, save=False,wallet_type=None):
@@ -313,7 +326,12 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
+def test_merge():
+    ab = AddressBook()
+    ab.update_addresses = set(ab.address_book.keys())
+    ab.merge_vectors()
 
+#test_merge()
 # # Results for blocks 190000-190100, single thread
 # res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
 #
