@@ -208,6 +208,7 @@ class AddressBook:
                          if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
         return ins_list + outs_list
 
+
     # def multi_tx_to_address_list(self, tx: blocksci.Tx):
     #     """
     #     :param tx: Blocksci tx
@@ -225,7 +226,6 @@ class AddressBook:
     #                                    , enumerate(tx.outs.address.to_list()))
     #                      ]
     #     return ins_list + outs_list
-
 
 
     def updateWalletVector(self, wallet_vector: pd.DataFrame):
@@ -253,6 +253,7 @@ class AddressBook:
                                                                       wallet_vector.iloc[idx]['time'])
                     wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
         return wallet_vector
+
 
     @staticmethod
     def timeToUnix(datetime):
@@ -287,7 +288,6 @@ def test_n_times_multi(n,start,stop):
         test_results.append(test_multi_update(start, stop))
     return test_results
 
-
 def test_n_times(n,start,stop):
     test_results = []
     for test in range(n):
@@ -305,7 +305,6 @@ def test_update(start,stop,checkpoint=None):
         ab.update_range(ab.address_book.keys(),start=start,stop=stop)
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
-
 
 def test_multi_update(start,stop):
     ab = AddressBook()
