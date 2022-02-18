@@ -12,6 +12,9 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
+
+#LALALA
+
 ADDRESS_VECTORS_PATH = '/root/address_vectors_test480k/'
 
 class AddressBook:
