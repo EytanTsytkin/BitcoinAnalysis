@@ -1,5 +1,5 @@
-import csv
 import os
+import csv
 import time
 import json
 import random
@@ -13,9 +13,8 @@ from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
 
-#LALALA
 
-ADDRESS_VECTORS_PATH = '/root/address_vectors_test380k/'
+ADDRESS_VECTORS_UPDATE = '/root/address_vectors_test380k/'
 
 class AddressBook:
     def __init__(self):
@@ -50,6 +49,49 @@ class AddressBook:
                 f'<- Reached block no.{block.height}, Duration: {time.time()-t}. '
                 f'Wallets found: {tot_wallets}. '
                 f'Txes found: {self.found_txes} ->')
+
+
+    def merge_vectors(self):
+        dirs = self.get_vector_dirs()
+        found_lines = 0
+        found_addresses = 0
+        t = time.time()
+        for address in self.update_addresses:
+            print(f'Merging {address}. So far found {found_lines} unique rows.',end='\r')
+            lines = self.merge_single_address(self, address, dirs)
+            if lines == 0:
+                print(f'Address not found. Proceeding..',end='\r')
+            if lines > 0:
+                found_addresses += 1
+                found_lines += lines
+        print(f'Done merging on {found_addresses} addresses with {found_lines} rows total, in {time.time()-t} seconds. ', end='\r')
+
+
+    def merge_single_address(self,address,dir_contents):
+        locations = self.check_locations(address,dir_contents)
+        if len(locations) == 0:
+            return 0
+        elif len(locations) == 1:
+            temp_vector = pd.read_csv(f'{locations[0]}/{address}.csv')
+        elif len(locations) >1 :
+            temp_vector = [pd.read_csv(f'{loc}/{address}.csv') for loc in locations]
+            temp_vector = pd.concat(temp_vector)
+        temp_vector.sort_values(by=['tx_index'], inplace=True)
+        temp_vector.drop_duplicates(inplace=True)
+        temp_vector = self.updateWalletVector(temp_vector)
+        temp_vector.to_csv(ADDRESS_VECTORS_PATH + address + '.csv')
+        return len(temp_vector)
+
+
+    def get_vector_dirs(self):
+        dir_names = [os.path.join('/root/', x) for x in os.listdir('/root') if 'address_vectors_test' in x]
+        dir_sets = [set([x for x in os.listdir(dirname) if '.csv' in x]) for dirname in dir_names]
+        return list(zip(dir_names, dir_sets))
+
+
+    def check_locations(self,name,dirs_contents):
+        name = f'{name}.csv'
+        return [x[0] for x in dirs_contents if name in x[1]]
 
 
     def update_range_multiproc(self,addresses,start=None,stop=None):
@@ -116,7 +158,7 @@ class AddressBook:
             print(f'Added wallet vector for {address}', end='\r', )
         try:
             tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
-            with open(os.path.join(ADDRESS_VECTORS_PATH, address + '.csv'), 'a') as f:
+            with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'a') as f:
                 csv.writer(f).writerow([tx_type,
                                         tx_value,
                                          0,
@@ -131,7 +173,7 @@ class AddressBook:
 
 
     def make_wallet_vector(self, address: str):
-        with open(os.path.join(ADDRESS_VECTORS_PATH,address+'.csv'),'w') as f:
+        with open(os.path.join(ADDRESS_VECTORS_UPDATE,address+'.csv'),'w') as f:
             csv.writer(f).writerow(['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash','tx_index'])
             f.close()
 
@@ -257,7 +299,7 @@ def test_update(start,stop,checkpoint=None):
     ab = AddressBook()
     t =time.time()
     if checkpoint:
-        ab.found_wallets=set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_PATH)])
+        ab.found_wallets=set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_UPDATE)])
         print(f'Starting with {len(ab.found_wallets)}.')
         ab.update_range(ab.address_book.keys(), start=checkpoint, stop=stop)
     else:
@@ -273,7 +315,7 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
-test_update(380000,None)
+
 # # Results for blocks 190000-190100, single thread
 # res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
 #
