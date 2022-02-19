@@ -12,8 +12,16 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
+ADDRESS_VECTORS_PATH = '/root/address_vectors_merged2/'
+AGG_DICT = {"valueBTC": "sum",
+            "valueUSD": "sum",
+            "feeBTC": "sum",
+            "feeUSD": "sum",
+            "time": "first"}
+POOL = Pool(processes=4)
+
 # to do:
-# 1. Run updateWalletVector on /root/address_vectors_merged to fix first lines value == 0
+
 # 2. Add the tagging again to addressbook.json!
 # 3. Reformat the addressbook to hold tags instead of 'type','spec_type'...
 # 4. Maybe plot some stuff yo
@@ -27,7 +35,9 @@ class AddressBook:
                                                       end=datetime.date(2021, 1, 31))
         self.found_wallets = set()
         self.found_txes = 0
-        #self.pool = Pool(processes=16)
+        self.merged_wallets = 0
+        self.merged_lines = 0
+        self.vector_dirs = self.get_vector_dirs()
         #self.executor = ThreadPoolExecutor(3)
 
 
@@ -55,40 +65,35 @@ class AddressBook:
 
 
     def merge_vectors(self):
-        dirs = self.get_vector_dirs()
-        found_lines = 0
-        found_addresses = 0
         t = time.time()
         print(f'Starting merge..')
+        # POOL.map(self.merge_single_address, self.update_addresses)
         for address in self.update_addresses:
-            print(f'Merging {address}. So far found {found_lines} unique rows.',end='\r')
-            lines = self.merge_single_address(address, dirs)
-            if lines == 0:
-                print(f'Address not found. Proceeding..',end='\r')
-            if lines > 0:
-                found_addresses += 1
-                found_lines += lines
-        print(f'Done merging on {found_addresses} addresses with {found_lines} rows total, in {time.time()-t} seconds. ', end='\r')
+            self.merge_single_address(address)
+        print(f'Done merging on {self.merged_wallets} addresses with {self.merged_lines} rows total, in {time.time()-t} seconds.')
 
 
-    def merge_single_address(self,address,dir_contents):
-        locations = self.check_locations(address,dir_contents)
+    def merge_single_address(self,address):
+        locations = self.check_locations(address,self.vector_dirs)
+        print(f'Merging {address}. So far found {self.merged_lines} unique rows, {self.merged_wallets} wallets.', end='\r')
         if len(locations) == 0:
-            return 0
+            return
         elif len(locations) == 1:
             temp_vector = pd.read_csv(f'{locations[0]}/{address}.csv')
         elif len(locations) >1 :
             temp_vector = [pd.read_csv(f'{loc}/{address}.csv') for loc in locations]
             temp_vector = pd.concat(temp_vector)
-        temp_vector.sort_values(by=['tx_index'], inplace=True)
         temp_vector.drop_duplicates(inplace=True)
+        temp_vector.sort_values(by=['tx_index'], inplace=True)
+        temp_vector.groupby(["tx_index", "tx_type", "hash"], as_index=False).agg(AGG_DICT,inplace=True)
         temp_vector = self.updateWalletVector(temp_vector)
         temp_vector.to_csv(ADDRESS_VECTORS_PATH + address + '.csv')
-        return len(temp_vector)
+        self.merged_lines +=  len(temp_vector)
+        self.merged_wallets += 1
 
 
     def get_vector_dirs(self):
-        dir_names = [os.path.join('/root/', x) for x in os.listdir('/root') if 'address_vectors_test' in x]
+        dir_names = sorted([os.path.join('/root/', x) for x in os.listdir('/root') if 'address_vectors_test' in x])
         dir_sets = [set([x for x in os.listdir(dirname) if '.csv' in x]) for dirname in dir_names]
         return list(zip(dir_names, dir_sets))
 
@@ -240,31 +245,13 @@ class AddressBook:
         """
         if len(wallet_vector) == 0:
             pass
-        elif len(wallet_vector) == 1:
+        else:
             if wallet_vector.iloc[0]['valueUSD'] == 0:
                 wallet_vector.iat[0, 2] = self.cc.btc_to_currency(wallet_vector.iloc[0]['valueBTC'],
                                                                   wallet_vector.iloc[0]['time'])
                 wallet_vector.iat[0, 4] = self.cc.btc_to_currency(wallet_vector.iloc[0]['feeBTC'],
                                                                   wallet_vector.iloc[0]['time'])
                 wallet_vector.iat[0, 5] = self.timeToUnix(wallet_vector.iloc[0]['time'])
-
-        elif len(wallet_vector) > 1:
-            for idx in range(len(wallet_vector)):
-                if idx == 0:
-                    if wallet_vector.iloc[idx]['valueUSD'] == 0:
-                        wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
-                                                                            wallet_vector.iloc[idx]['time'])
-                        wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
-                                                                            wallet_vector.iloc[idx]['time'])
-                        wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
-                else:
-                    if wallet_vector.iloc[idx]['valueUSD'] == 0:
-                        wallet_vector.iat[idx, 1] = (wallet_vector.iloc[idx]['valueBTC'] - wallet_vector.iloc[idx - 1]['valueBTC'])
-                        wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
-                                                                            wallet_vector.iloc[idx]['time'])
-                        wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
-                                                                          wallet_vector.iloc[idx]['time'])
-                        wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
         return wallet_vector
 
 
@@ -326,10 +313,28 @@ def test_multi_update(start,stop):
     print(f'Total time for 100 blocks:{time.time()-t}')
     return time.time()-t
 
-def test_merge():
+def test_merge(test_set = None):
+    ab = AddressBook()
+    if not test_set:
+        ab.update_addresses = set(random.sample(ab.address_book.keys(),100))
+        test_set = ab.update_addresses
+    else:
+        ab.update_addresses = test_set
+    print('First run:')
+    ab.merge_vectors()
+    print('Second run:')
+    ab.merge_vectors()
+    print('Third run:')
+    ab.merge_vectors()
+    return test_set
+
+def merge_all():
     ab = AddressBook()
     ab.update_addresses = set(ab.address_book.keys())
     ab.merge_vectors()
+
+if __name__ == '__main__':
+    merge_all()
 
 #test_merge()
 # # Results for blocks 190000-190100, single thread
