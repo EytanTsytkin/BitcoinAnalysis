@@ -171,3 +171,12 @@ def compute_coherence_values(dictionary, corpus, texts, limit=20, start=5, step=
 def visual():
     vis6= pyLDAvis.gensim.prepare(lda_model,corpus,id2word)
     pyLDAvis.save_html(vis6,'/mnt/plots/lda_visual6')
+
+
+def work_with_abuser():
+    no_emails = abuse_df.abuser.str.replace("\S*@\S*\s?","")
+    no_emails = no_emails[no_emails.astype(bool)]
+    no_emails = no_emails.str.lower()
+    no_emails_2 = bigrams(no_emails)
+    no_emails_3 = no_emails.apply(comput_bigram_mod, bigram_model=no_emails_2)
+    id2word = corpora.Dictionary(no_emails_3)
