@@ -1,14 +1,14 @@
 ABUSE_PATH = '/root/abuse_data/abuse.csv'
 ABUSE_CORPUS_PATH = '/root/abuse_data/abuse_corpus.mm'
 ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
+ADDRESS_VECTORS_UPDATE = '/root/address_vectors_test/'
+ADDRESS_VECTORS_PATH = '/root/address_vectors_merged3/'
 CONFIG_PATH = '/root/config.json'
 CLUSTER_PATH = '/root/BlockSci/docs/reference/clustering'
+FREQ_DICT_EN = '/root/abuse_data/english_freq_dict.json'
 IMAGE_PATH = '/home/eytantsytkin/BitcoinAnalysis'
 PLOTS_PATH = '/mnt/plots/'
 TAGS_PATH = '/root/address_book/tags/'
-FREQ_DICT_EN = '/root/abuse_data/english_freq_dict.json'
-ABUSE_data = '/root/abuse_data/'
-TIME_CONV = '%Y-%m-%d %H:%M:%S'
 
 
 
@@ -234,26 +234,3 @@ DICT_OF_LANGUAGE_CODES = {"aa":    "Afar",
                           "zh-tw": "Chinese (Taiwan)",
                           "zu":    "Zulu"}
 SATOSHI = 10**-8
-
-#####################################################################################
-import pandas as pd
-from datetime import datetime
-from time import mktime
-some_csv = "/root/address_vectors_merged/1MwdgAgBHXqpQjahpxXAPxAXnuNQB8Gaoc.csv"
-
-wallet_df = pd.read_csv(some_csv)
-
-# unix to date datetime.fromtimestamp
-#
-
-def str_time_to_unix(str_date):
-    return mktime(datetime.strptime(str_date, TIME_CONV).timetuple())
-
-
-def prepare_df(df):
-    aggrigate_dict = {"valueBTC": "sum", "valueUSD": "sum", "feeBTC": "sum", "feeUSD": "sum", "time": "first"}
-    df = df.groupby(["tx_index", "tx_type", "hash"],as_index=False).agg(aggrigate_dict)
-    df["time"][0] = datetime.fromtimestamp(float(df["time"][0])).strftime('%Y-%m-%d %H:%M:%S')
-    df["time_stamp"] = df.time.apply(str_time_to_unix)
-    df.set_index("time", inplace=True)
-    return df
