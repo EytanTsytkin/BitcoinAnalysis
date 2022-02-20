@@ -333,8 +333,7 @@ def merge_all():
     ab.merge_vectors()
 
 if __name__ == '__main__':
-    pass
-    #merge_all()
+    merge_all()
 
 #test_merge()
 # # Results for blocks 190000-190100, single thread
