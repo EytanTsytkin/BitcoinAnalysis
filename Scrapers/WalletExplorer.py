@@ -83,8 +83,7 @@ def makeAddressBook(Typedict):
 
 
 if __name__ == "__main__":
-    pass
-    # TypeDict = makeTypeSitesDict()
+    TypeDict = makeTypeSitesDict()
     # for attempt in range(10):
     #     try:
     #         AddressBook = makeAddressBook(TypeDict)

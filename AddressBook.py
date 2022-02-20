@@ -12,7 +12,7 @@ from  multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
-ADDRESS_VECTORS_PATH = '/root/address_vectors_merged2/'
+ADDRESS_VECTORS_PATH = '/root/address_vectors_merged3/'
 AGG_DICT = {"valueBTC": "sum",
             "valueUSD": "sum",
             "feeBTC": "sum",
@@ -22,8 +22,6 @@ POOL = Pool(processes=4)
 
 # to do:
 
-# 2. Add the tagging again to addressbook.json!
-# 3. Reformat the addressbook to hold tags instead of 'type','spec_type'...
 # 4. Maybe plot some stuff yo
 
 class AddressBook:
@@ -246,12 +244,13 @@ class AddressBook:
         if len(wallet_vector) == 0:
             pass
         else:
-            if wallet_vector.iloc[0]['valueUSD'] == 0:
-                wallet_vector.iat[0, 2] = self.cc.btc_to_currency(wallet_vector.iloc[0]['valueBTC'],
-                                                                  wallet_vector.iloc[0]['time'])
-                wallet_vector.iat[0, 4] = self.cc.btc_to_currency(wallet_vector.iloc[0]['feeBTC'],
-                                                                  wallet_vector.iloc[0]['time'])
-                wallet_vector.iat[0, 5] = self.timeToUnix(wallet_vector.iloc[0]['time'])
+            for idx in range(len(wallet_vector)):
+                if wallet_vector.iloc[idx]['valueUSD'] == 0:
+                    wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
+                                                                      wallet_vector.iloc[idx]['time'])
+                    wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
+                                                                      wallet_vector.iloc[idx]['time'])
+                    wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
         return wallet_vector
 
 
@@ -334,7 +333,8 @@ def merge_all():
     ab.merge_vectors()
 
 if __name__ == '__main__':
-    merge_all()
+    pass
+    #merge_all()
 
 #test_merge()
 # # Results for blocks 190000-190100, single thread
