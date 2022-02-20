@@ -22,7 +22,7 @@ POOL = Pool(processes=4)
 # to do:
 
 # 1. Make hist plot of all elkys features.
-# 2. Find a way to desribe the distribution of tx fees and values - samples - 1000 blocks.
+# 2. Find a way to describe the distribution of tx fees and values - samples - 1000 blocks.
 # 3. Talk to Max about using his email!
 
 
@@ -68,7 +68,11 @@ class AddressBook:
                 f'Wallets found: {tot_wallets}. '
                 f'Txes found: {self.found_txes} ->')
 
-
+    def extract_features(self, addresses):
+        self.update_addresses = set(addresses)
+        for address in self.update_addresses:
+            self.address_book[address]
+        pass
     def merge_vectors(self):
         t = time.time()
         print(f'Starting merge..')
@@ -286,15 +290,17 @@ class AddressBook:
         return time.mktime(datetime.datetime.strptime(date_time,"%Y-%m-%d %H:%M:%S").timetuple())
 
 
-    def plot_wallet_vector(self, address: str, wallet_vector: pd.DataFrame, size: float, save=False, wallet_tags=None):
+    def plot_wallet_vector(self, address: str, wallet_vector: pd.DataFrame, size: float, save=False, wallet_tags=None, symmetry=True):
         """
         Plots the tx value of every tx of the desired wallet, over time.
         Inputs are colored blue, outputs in red.
         """
         plt.close()
-        scatter = plt.scatter(wallet_vector["time"],
-                              wallet_vector["valueUSD"],
-                              c=wallet_vector["type"],
+        if symmetry:
+            wallet_vector.valueUSD = np.multiply(wallet_vector.valueUSD,wallet_vector.tx_type)
+        scatter = plt.scatter(wallet_vector.time,
+                              wallet_vector.valueUSD,
+                              c=wallet_vector.tx_type,
                               cmap='coolwarm',
                               s=size)
         plt.suptitle('Transcations over time')
