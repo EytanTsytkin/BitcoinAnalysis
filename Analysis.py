@@ -100,3 +100,38 @@ def checkAddress(blockchain,wallet):
 
 def makeVectorBatch(address_list):
     return {wallet:AddressVector(chain.address_from_string(wallet)) for wallet in address_list if checkAddress(chain,wallet)}
+################################ analysis_from csv
+
+
+def calculate_fee(row,time):
+    pass
+
+
+def num_in_a_row(series):
+    flag = True
+
+
+def extract_features_USD(df):
+    type_odds = df.tx_type.value_counts().values[0]/df.tx_type.value_counts().values[1] #values[0] is outputs
+    life_time = df.time.iloc[-1]-df.time.iloc[1]
+    activity_density = df.time.std()/60  # std in minutes
+    dollar_obtain_per_tx = df.loc[df.tx_type == 1].valueUSD.sum()/df.tx_type.value_counts().values[0]
+    dollar_spent_per_tx = df.loc[df.tx_type == -1].valueUSD.sum()/df.tx_type.value_counts().values[1]
+    max_fee = df.feeUSD.max #most values is 0 so need to think if we want to recalculte or take diff from 0
+    total_num_tx = df.shape[0]
+    total_dollar = df.valueUSD.sum()
+
+
+
+def extract_features_BTC(df):
+    odds = df.tx_type.value_counts().values[0]/df.tx_type.value_counts().values[1]
+    life_time = df.time.iloc[-1]-df.time.iloc[1]
+    activity_density = df.time.std()/60  # std in minutes
+    btc_obtain_per_tx = df.loc[df.tx_type == 1].valueBTC.sum()/df.tx_type.value_counts().values[0]
+    btc_spent_per_tx = df.loc[df.tx_type == -1].valueBTC.sum()/df.tx_type.value_counts().values[1]
+    max_fee = df.feeBTC.max #most values is 0 so need to think if we want to recalculte or take diff from 0
+    total_num_tx = df.shape[0]
+    total_btc = df.valueBTC.sum()
+
+
+

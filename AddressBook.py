@@ -8,7 +8,7 @@ import datetime
 import numpy as np
 import pandas as pd
 from PATHS import *
-from  multiprocessing import Pool
+from multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
