@@ -1,0 +1,35 @@
+ # Results for blocks 190000-190100, single thread
+ res1 = [57.16300082206726, 57.30099153518677, 57.65855407714844]
+
+ # Results for blocks 190000-190100, single thread, no list comprehension for blocks:
+ res2 = [57.13825750350952, 56.91519618034363, 57.32981038093567]
+
+ # Results for blocks 190000-190100, 16 threads:
+ res3 = [68.33737421035767, 68.18032550811768, 68.81083369255066]
+
+ # Results for blocks 190000-190100, 3 threads:
+ res4 = [66.5042371749878, 66.51269555091858, 66.48649406433105]
+
+ # Results for blocks 190000-190100, 4 cpu, blocksci. map blocks:
+ res5 = [28.303866624832153, 27.49988317489624, 27.342219591140747]
+
+ # Results for blocks 190000-190100, single thread with higher open files limit-
+ #res6 = similar to res 1, slightly better
+
+ # Results for blocks 190000-190100, 8 cpu, blocksci. map blocks:
+ res7 = [32.515013456344604, 32.351489782333374, 32.329580545425415]
+
+ # Results for blocks 190000-190100, 2 cpu, blocksci. map blocks:
+ res8 = [34.220452070236206, 33.99496340751648, 33.794970989227295]
+
+ # Results for blocks 190000-190100, 5 cpu, blocksci. map blocks:
+ res9 = [28.276405334472656, 29.267545700073242, 28.557278871536255]
+
+ # Results for blocks 190000-190100, 4 cpu, blocksci. map blocks, writecsv instead of memory:
+ res10 = [16.83560299873352]
+
+ # Results for blocks 190000-190100, 1 cpu, writecsv instead of memory:
+ res11 = [17.29053258895874]
+
+ # Results for blocks 190000-190100, 8 cpu, blocksci. map blocks, writecsv instead of memory:
+ res12 = [25.467056035995483, 25.344855785369873, 25.35331916809082]
