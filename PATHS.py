@@ -9,7 +9,7 @@ FREQ_DICT_EN = '/root/abuse_data/english_freq_dict.json'
 IMAGE_PATH = '/home/eytantsytkin/BitcoinAnalysis'
 PLOTS_PATH = '/mnt/plots/'
 TAGS_PATH = '/root/address_book/tags/'
-
+ABUSE_data = '/root/abuse_data/'
 
 
 
