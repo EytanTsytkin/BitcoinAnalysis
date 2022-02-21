@@ -67,11 +67,8 @@ def extract_features_USD(df):
     # max_fee = df.feeUSD.max #most values is 0 so need to think if we want to recalculte or take diff from 0
     # total_num_tx = df.shape[0]
     # total_dollar = df.valueUSD.sum()
-    return {
-        'symmetry_score' : symmetry_score(df),
-        'activity_density' : activity_density(df),
-        'value_statistics': value_statistics(df)
-    }
+    features = [symmetry_score(df),activity_density(df),value_statistics(df)]
+    return {key: val for feature in features for key,val in feature.items()}
 
 def activity_density(df):
     """
@@ -79,7 +76,7 @@ def activity_density(df):
     """
     first_tx = df.time.iloc[0]
     time_vector = np.array(df.time) - first_tx
-    time_between_txes = np.array([time_vector[idx] -time_vector[idx-1] for idx in range(len(time_vector)-1)])
+    time_between_txes = np.array([time_vector[idx] -time_vector[idx-1] for idx in range(1,len(time_vector))])
     return {
         "lifetime": time_vector[-1],
         "first_tx" : first_tx,
