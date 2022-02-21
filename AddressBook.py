@@ -373,4 +373,5 @@ def merge_all():
     ab.merge_vectors()
 
 
-
+if __name__ == '__main__':
+    merge_all()
