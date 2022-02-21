@@ -63,7 +63,7 @@ class AddressBook:
 
     def write_exrtaction_log(self,e,address):
         t = time.time()
-        with open(f'/root/address_book/logs/extraction_logs.txt', 'a') as log:
+        with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
             log.write( f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
                 f'<- Extraction error in {address}: {e}. ->')
             log.close()
@@ -80,11 +80,7 @@ class AddressBook:
                 f'Txes found: {self.found_txes} ->')
             log.close()
 
-    def extract_features(self, addresses):
-        self.update_addresses = set(addresses)
-        for address in self.update_addresses:
-            self.address_book[address]
-        pass
+
     def merge_vectors(self):
         t = time.time()
         print(f'Starting merge..')
