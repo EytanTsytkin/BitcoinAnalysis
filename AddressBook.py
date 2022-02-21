@@ -3,6 +3,7 @@ import csv
 import time
 import json
 import random
+import Analysis
 import blocksci
 import datetime
 import numpy as np
@@ -47,6 +48,9 @@ class AddressBook:
         self.found_txes = 0
         self.merged_wallets = 0
         self.merged_lines = 0
+
+        self.extracted_features = 0
+
         self.vector_dirs = self.get_vector_dirs()
         #self.executor = ThreadPoolExecutor(3)
 
@@ -56,6 +60,13 @@ class AddressBook:
         with open(ADDRESSBOOK_PATH, 'r') as f:
             book = json.load(f)
             return book
+
+    def write_exrtaction_log(self,e,address):
+        t = time.time()
+        with open(f'/root/address_book/logs/extraction_logs.txt', 'a') as log:
+            log.write( f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
+                f'<- Extraction error in {address}: {e}. ->')
+            log.close()
 
 
     def write_log(self,block: blocksci.Block):
@@ -67,6 +78,7 @@ class AddressBook:
                 f'<- Reached block no.{block.height}, Duration: {time.time()-t}. '
                 f'Wallets found: {tot_wallets}. '
                 f'Txes found: {self.found_txes} ->')
+            log.close()
 
     def extract_features(self, addresses):
         self.update_addresses = set(addresses)
@@ -84,7 +96,7 @@ class AddressBook:
 
     def merge_single_address(self,address: str):
         locations = self.check_locations(address,self.vector_dirs)
-        print(f'Merging {address}. So far found {self.merged_lines} unique rows, {self.merged_wallets} wallets.', end='\r')
+        print(f'Merging {address}. So far found {self.merged_lines} unique rows, {self.merged_wallets} wallets, extracted {self.extracted_features} features.', end='\r')
         if len(locations) == 0:
             return
         elif len(locations) == 1:
@@ -97,8 +109,22 @@ class AddressBook:
         temp_vector.groupby(["tx_index", "tx_type", "hash"], as_index=False).agg(AGG_DICT,inplace=True)
         temp_vector = self.updateWalletVector(temp_vector)
         temp_vector.to_csv(ADDRESS_VECTORS_PATH + address + '.csv')
-        self.merged_lines +=  len(temp_vector)
+        self.extract_features(address,temp_vector)
+        self.merged_lines += len(temp_vector)
         self.merged_wallets += 1
+
+
+    def extract_features(self,address: str,wallet_df : pd.DataFrame):
+        try:
+            features = Analysis.extract_features_USD(wallet_df)
+            features['tags'] = self.address_book[address]
+            with open(FEATURE_BOOK_PATH,'a') as f:
+                csv.writer(f).writerow(features)
+                f.close()
+            self.extracted_features += 1
+        except Exception as e:
+            self.write_exrtaction_log(e,address)
+
 
 
     def get_vector_dirs(self):
