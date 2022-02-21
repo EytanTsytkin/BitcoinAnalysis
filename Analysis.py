@@ -93,18 +93,18 @@ def symmetry_score(df):
     Rrturns a dict with symmetry related attributes.
     in score/ out score tries to capture the notion of symmetry -
     it calculates how often does input txs are seperated by output txs, and vice versa.
-    maximum in both is 1, minimum is ( (len(df)^2) ** -1 )
+    maximum in both is 0.5, minimum is ( (len(df)^2) ** -1 )
 
         # Reference: https://stackoverflow.com/questions/66441738/pandas-sum-consecutive-rows-satisfying-condition
 
     """
     tx_type_odds = df.tx_type.value_counts().values[0]/df.tx_type.value_counts().values[1]
 
-    in_condition, out_condition = df.tx_type - 1, df.tx_type + 1
+    in_condition, out_condition = (df.tx_type - 1).astype(bool), (df.tx_type + 1).astype(bool)
     in_sums, out_sums = (~in_condition).cumsum()[in_condition], (~out_condition).cumsum()[out_condition]
 
-    in_score = ((df.tx_type.groupby(in_sums).agg(np.sum))**-1).sum()/df.shape[0]
-    out_score =  ((df.tx_type.groupby(out_sums).agg(np.sum)) ** -1).sum()/df.shape[0]
+    in_score = (1/df.tx_type.groupby(in_sums).agg(np.sum)).sum()/df.shape[0]
+    out_score = (1/df.tx_type.groupby(out_sums).agg(np.sum)).sum()/df.shape[0]
 
     return {
         'tx_type_odds' : tx_type_odds,
@@ -122,7 +122,7 @@ def value_statistics(df):
         'tx_value_std' : df.valueUSD.std(),
         'tx_value_prob_mean' : None, # this uses the probabilty of having the tx value in its' block
         'tx_value_prob_std' : None, # this uses the probabilty of having the tx value in its' block
-        'max_fee' : df.feeUSD.max, #most values is 0 so need to think if we want to recalculte or take diff from 0
+        'max_fee' : df.feeUSD.max(), #most values is 0 so need to think if we want to recalculte or take diff from 0
         'fee_prob_mean' :  None, # this uses the probabilty of having the tx fee in its' block
         'fee_prob_std' : None, # this uses the probabilty of having the tx fee in its' block
         'total_num_tx' : df.shape[0],
@@ -147,3 +147,94 @@ def extract_features_BTC(df):
 
 
 
+def heat_cor_view(big_df,wanted_method : str):
+    # i referred the input as pandas but this is still raw function
+    df_spear_corr = big_df.corr(method=wanted_method)
+    im = plt.imshow(df_spear_corr, cmap=plt.get_cmap('coolwarm'))
+    plt.xticks(np.arange(big_df.shape[1]), big_df.columns, rotation=90)
+    plt.yticks(np.arange(big_df.shape[1]), big_df.columns_)
+    plt.colorbar()
+    plt.show()
+    plt.close()
+
+
+
+def some_statistics_on_features(big_df,wanted_plot: str):
+    # the same as above
+    #here just initial numbers we will know better when will have the size of the big df
+    nrow = big_df.shape[1]//3
+    ncol = 3
+    fig, axes = plt.subplots(nrow, ncol)
+    axes = axes.flat
+    for i in range(big_df.shape[1]):
+        big_df.iloc[:,i].plot(kind=wanted_plot, ax=axes[i])
+
+
+
+
+# ### MUST BE FIXED - we need to
+# def AddressVector(wallet):
+#     # Returns a time series of wallet balance in USD
+#     # Each timestamp is a tx
+#     # 1 = wallet receives money (it is an output of the tx)
+#     # -1 = wallet sends money (it is an input of the tx)
+#     out_list = [[1,
+#                  wallet.balance(tx.block_height) * SATOSHI,
+#                  tx.block_time] for tx in wallet.output_txes]
+#     in_list = [[-1,
+#                 wallet.balance(tx.block_height) * SATOSHI,
+#                 tx.block_time] for tx in wallet.input_txes]
+#     res = sorted(out_list + in_list,key=lambda x: x[2])
+#     res = updateTxValue(res)
+#     res = pd.DataFrame(res,columns=["type","value","time"])
+#     return res
+#
+#
+# def updateTxValue(tx_list):
+#     if len(tx_list) == 0:
+#         pass
+#     elif len(tx_list) == 1:
+#         tx_list[0][1] = cc.btc_to_currency(tx_list[0][1],tx_list[0][2])
+#         tx_list[0][2] = timeToUnix(tx_list[0][2])
+#     elif len(tx_list) > 1:
+#         balance_list = list(tx_list[idx][1] - tx_list[idx-1][1] for idx in range(1,len(tx_list)))
+#         for idx in range(1,len(tx_list)):
+#             tx_list[idx][1] = cc.btc_to_currency(balance_list[idx-1], tx_list[idx][2])
+#             tx_list[idx][2] = timeToUnix(tx_list[idx][2])
+#         tx_list[0][2] = timeToUnix(tx_list[0][2])
+#     return tx_list
+#
+#
+# def VT_VecScore(VTVec):
+#     pass
+#
+#
+# def plotValueTimeSeries(address,timeSeries,size,save=False,type=None):
+#     plt.close()
+#     scatter = plt.scatter(timeSeries["time"],
+#                           timeSeries["valueBTC"],
+#                           c=timeSeries["type"],
+#                           cmap='coolwarm',
+#                           s=size)
+#     if type:
+#         plt.title(f'Tx over time in {type}')
+#         plt.gca().add_artist(plt.legend([address],loc=4))
+#     else:
+#         plt.title(f'Tx over time in {address}')
+#     plt.xlabel('Time')
+#     plt.ylabel('Tx Value USD')
+#     plt.legend(handles=scatter.legend_elements()[0],labels=['Input','Output'])
+#     if save:
+#         filename = f'{PLOTS_PATH}AV_{address}.png'
+#         plt.savefig(filename)
+#     else:
+#         plt.show()
+#
+#
+# def QuickLoad(ml_data_path):
+#     # Qucickly loads a dictionary with addresses a keys,
+#     # and Timeseries vectors as values
+#     return {file.split('.csv')[0]:pd.read_csv(os.path.join(ml_data_path,file)) for file in os.listdir(ml_data_path)}
+#
+# def makeVectorBatch(address_list):
+#     return {wallet:AddressVector(chain.address_from_string(wallet)) for wallet in address_list if checkAddress(chain,wallet)}
