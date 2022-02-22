@@ -412,10 +412,4 @@ def merge_all():
 
 
 if __name__ == '__main__':
-   ab = AddressBook()
-   ab.update_addresses=set(['1Go7vvmLfKeu88m2zRzbuztfkLDfxbLJk5',
-       '18t1cYakmT2nr5cfeMUZauS3SzReDpm7bR',
-       '112zgpNRn1CnVNhPp9o41LdkL7s9Xcd3Hm',
-       '1QJ6zRTTsLqNC3HHnEMM4g4xgRDGML48hZ',
-       '14oJvYxFwQorn3sD5qNxtD7hdhhXBZD92h'])
-   ab.merge_vectors()
+    merge_all()
