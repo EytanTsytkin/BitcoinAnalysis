@@ -133,7 +133,7 @@ class AddressBook:
         try:
             features = []
             features.append(address)
-            features = features + Analysis.extract_features_USD(wallet_df)
+            features = features + extract_features_USD(wallet_df) # Analysis.extract_features_USD(wallet_df)
             features.append(self.address_book[address])
             with open(FEATURE_BOOK_PATH, 'a') as f:
                 csv.writer(f).writerow(features)
@@ -412,4 +412,10 @@ def merge_all():
 
 
 if __name__ == '__main__':
-    merge_all()
+   ab = AddressBook()
+   ab.update_addresses=set(['1Go7vvmLfKeu88m2zRzbuztfkLDfxbLJk5',
+       '18t1cYakmT2nr5cfeMUZauS3SzReDpm7bR',
+       '112zgpNRn1CnVNhPp9o41LdkL7s9Xcd3Hm',
+       '1QJ6zRTTsLqNC3HHnEMM4g4xgRDGML48hZ',
+       '14oJvYxFwQorn3sD5qNxtD7hdhhXBZD92h'])
+   ab.merge_vectors()

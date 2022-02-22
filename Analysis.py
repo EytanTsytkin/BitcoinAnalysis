@@ -112,6 +112,7 @@ def symmetry_score(df):
             out_score = None
             in_score = df.shape[0]
     else:
+        df.reset_index(inplace=True)
         tx_type_odds = df.tx_type.value_counts().values[0]/df.tx_type.value_counts().values[1]
 
         in_condition, out_condition = (df.tx_type - 1).astype(bool), (df.tx_type + 1).astype(bool)
