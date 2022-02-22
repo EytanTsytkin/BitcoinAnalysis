@@ -136,7 +136,7 @@ class AddressBook:
             features = Analysis.extract_features_USD(wallet_df)
             features.append(self.address_book[address])
             with open(FEATURE_BOOK_PATH, 'a') as f:
-                csv.writer(f).writerow([])
+                csv.writer(f).writerow(features)
                 f.close()
             self.extracted_features += 1
         except Exception as e:
