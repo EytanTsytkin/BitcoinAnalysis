@@ -62,7 +62,7 @@ def extract_features_USD(df):
     # max_fee = df.feeUSD.max #most values is 0 so need to think if we want to recalculte or take diff from 0
     # total_num_tx = df.shape[0]
     # total_dollar = df.valueUSD.sum()
-    features =  symmetry_score(df) + activity_density(df) + value_statistics(df)
+    features =  activity_density(df) +  symmetry_score(df) + value_statistics(df)
     return features
 
 
