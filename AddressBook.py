@@ -62,6 +62,14 @@ class AddressBook:
             book = json.load(f)
             return book
 
+    def make_feature_book(self):
+        with open(FEATURE_BOOK_PATH,'w') as f:
+            csv.writer(f).writerow(
+                ["address","lifetime", "first_tx", "tx_freq_mean", "tx_freq_std", 'tx_type_odds', 'consecutive_in_tx_score',
+                 'consecutive_out_tx_score', 'dollar_obtain_per_tx', 'dollar_spent_per_tx', 'obtain_spent_ratio',
+                 'tx_value_std', 'max_fee', 'total_num_tx', 'total_dollar', 'wallet_type','tags']
+            )
+
     def write_exrtaction_log(self, e, address):
         t = time.time()
         with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
@@ -123,10 +131,12 @@ class AddressBook:
 
     def extract_features(self, address: str, wallet_df: pd.DataFrame):
         try:
+            features = []
+            features.append(address)
             features = Analysis.extract_features_USD(wallet_df)
-            features['tags'] = self.address_book[address]
+            features.append(self.address_book[address])
             with open(FEATURE_BOOK_PATH, 'a') as f:
-                csv.writer(f).writerow(features)
+                csv.writer(f).writerow([])
                 f.close()
             self.extracted_features += 1
         except Exception as e:

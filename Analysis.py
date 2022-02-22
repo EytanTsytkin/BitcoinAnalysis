@@ -62,8 +62,9 @@ def extract_features_USD(df):
     # max_fee = df.feeUSD.max #most values is 0 so need to think if we want to recalculte or take diff from 0
     # total_num_tx = df.shape[0]
     # total_dollar = df.valueUSD.sum()
-    features = [symmetry_score(df),activity_density(df),value_statistics(df)]
-    return {key: val for feature in features for key,val in feature.items()}
+    features =  symmetry_score(df) + activity_density(df) + value_statistics(df)
+    return features
+
 
 def activity_density(df):
     """
@@ -73,19 +74,20 @@ def activity_density(df):
     time_vector = np.array(df.time) - first_tx
     if df.shape[0] > 1:
         time_between_txes = np.array([time_vector[idx] -time_vector[idx-1] for idx in range(1,len(time_vector))])
-        return {
-            "lifetime": time_vector[-1],
-            "first_tx": first_tx,
-            "tx_freq_mean": time_between_txes.mean() / 60,
-            "tx_freq_std": time_between_txes.std() / 60
-        }
+        return [
+             time_vector[-1], #"lifetime"
+             first_tx, #"first_tx":
+             time_between_txes.mean() / 60, #"tx_freq_mean"
+             time_between_txes.std() / 60, #"tx_freq_std"
+        ]
     else:
-        return {
-            "lifetime": time_vector[-1],
-            "first_tx": first_tx,
-            "tx_freq_mean": None,
-            "tx_freq_std": None
-        }
+        return [
+             time_vector[-1], # "lifetime"
+             first_tx, # "first_tx"
+             None, # "tx_freq_mean":
+             None # "tx_freq_std":
+        ]
+
 
 def symmetry_score(df):
     """
@@ -118,11 +120,12 @@ def symmetry_score(df):
         in_score = (1/df.tx_type.groupby(in_sums).agg(np.sum)).sum()/df.shape[0]
         out_score = (1/df.tx_type.groupby(out_sums).agg(np.sum)).sum()/df.shape[0]
 
-    return {
-        'tx_type_odds' : tx_type_odds,
-        'consecutive_in_tx_score' : in_score,
-        'consecutive_out_tx_score' : out_score
-    }
+    return [
+        tx_type_odds, # 'tx_type_odds' :
+        in_score, # consecutive_in_tx_score' :
+        out_score #'consecutive_out_tx_score' :
+    ]
+
 
 def value_statistics(df):
     tx_types = df.tx_type.value_counts().values
@@ -144,20 +147,21 @@ def value_statistics(df):
         dollar_spent_per_tx = df.loc[df.tx_type == -1].valueUSD.sum() / df.tx_type.value_counts().values[1]
         obtain_spent_ratio = dollar_obtain_per_tx/dollar_spent_per_tx
         wallet_type = 0
-    return {
-        'dollar_obtain_per_tx' : dollar_obtain_per_tx,
-        'dollar_spent_per_tx' : dollar_spent_per_tx,
-        'obtain_spent_ratio' : obtain_spent_ratio,
-        'tx_value_std' : df.valueUSD.std(),
-        'tx_value_prob_mean' : None, # this uses the probabilty of having the tx value in its' block
-        'tx_value_prob_std' : None, # this uses the probabilty of having the tx value in its' block
-        'max_fee' : df.feeUSD.max(), #most values is 0 so need to think if we want to recalculte or take diff from 0
-        'fee_prob_mean' :  None, # this uses the probabilty of having the tx fee in its' block
-        'fee_prob_std' : None, # this uses the probabilty of having the tx fee in its' block
-        'total_num_tx' : df.shape[0],
-        'total_dollar' : df.valueUSD.sum(),
-        'wallet_type' : wallet_type
-    }
+    return [
+        dollar_obtain_per_tx, # 'dollar_obtain_per_tx' :
+        dollar_spent_per_tx, # 'dollar_spent_per_tx' :
+        obtain_spent_ratio, # 'obtain_spent_ratio' :
+        df.valueUSD.std(), # 'tx_value_std' :
+        #'tx_value_prob_mean' : None, # this uses the probabilty of having the tx value in its' block
+        #'tx_value_prob_std' : None, # this uses the probabilty of having the tx value in its' block
+        df.feeUSD.max(),  # 'max_fee' :  most values is 0 so need to think if we want to recalculte or take diff from 0
+        # 'fee_prob_mean' :  None, # this uses the probabilty of having the tx fee in its' block
+        # 'fee_prob_std' : None, # this uses the probabilty of having the tx fee in its' block
+        df.shape[0],  # 'total_num_tx' :
+        df.valueUSD.sum(), # total_dollar' :
+        wallet_type # wallet_type' :
+    ]
+
 
 def peers_statistics(df):
     # Feature that counts how many distinct peers a wallet have
