@@ -133,7 +133,7 @@ class AddressBook:
         try:
             features = []
             features.append(address)
-            features = Analysis.extract_features_USD(wallet_df)
+            features = features + Analysis.extract_features_USD(wallet_df)
             features.append(self.address_book[address])
             with open(FEATURE_BOOK_PATH, 'a') as f:
                 csv.writer(f).writerow(features)
