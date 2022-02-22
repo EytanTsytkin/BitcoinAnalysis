@@ -65,8 +65,9 @@ class AddressBook:
     def write_exrtaction_log(self, e, address):
         t = time.time()
         with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
-            log.write(f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
-                      f'<- Extraction error in {address}: {e}. ->')
+            csv.writer(log).writerow([time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
+                                      address,
+                                      e])
             log.close()
 
     def write_log(self, block: blocksci.Block):
