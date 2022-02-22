@@ -20,8 +20,12 @@ AGG_DICT = {"valueBTC": "sum",
             "time": "first"}
 POOL = Pool(processes=4)
 
+
 # to do:
 
+# 1. Make hist plot of all elkys features.
+# 2. Find a way to describe the distribution of tx fees and values - samples - 1000 blocks.
+# 3. Talk to Max about using his email!
 
 
 class AddressBook:
@@ -38,8 +42,9 @@ class AddressBook:
         self.gambling = set([key for key, val in self.address_book.items() if 'gambling' in val])
         self.pools = set([key for key, val in self.address_book.items() if 'pools' in val])
         self.fraud = set([key for key, val in self.address_book.items() if 'fraud' in val])
-        
+
         self.update_addresses = None
+        self.large_addresses = set()
 
         self.found_wallets = set()
         self.found_txes = 0
@@ -49,8 +54,7 @@ class AddressBook:
         self.extracted_features = 0
 
         self.vector_dirs = self.get_vector_dirs()
-        #self.executor = ThreadPoolExecutor(3)
-
+        # self.executor = ThreadPoolExecutor(3)
 
     @staticmethod
     def load_book():
@@ -58,26 +62,23 @@ class AddressBook:
             book = json.load(f)
             return book
 
-    def write_exrtaction_log(self,e,address):
+    def write_exrtaction_log(self, e, address):
         t = time.time()
         with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
-            csv.writer(log).writerow([time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
-                                      address,
-                                      e])
+            log.write(f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
+                      f'<- Extraction error in {address}: {e}. ->')
             log.close()
 
-
-    def write_log(self,block: blocksci.Block):
+    def write_log(self, block: blocksci.Block):
         t = time.time()
         tot_wallets = len(self.found_wallets)
         with open(f'{ADDRESS_VECTORS_UPDATE}logs.txt', 'a') as log:
             log.write(
                 f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
-                f'<- Reached block no.{block.height}, Duration: {time.time()-t}. '
+                f'<- Reached block no.{block.height}, Duration: {time.time() - t}. '
                 f'Wallets found: {tot_wallets}. '
                 f'Txes found: {self.found_txes} ->')
             log.close()
-
 
     def merge_vectors(self):
         t = time.time()
@@ -85,64 +86,71 @@ class AddressBook:
         # POOL.map(self.merge_single_address, self.update_addresses)
         for address in self.update_addresses:
             self.merge_single_address(address)
-        print(f'Done merging on {self.merged_wallets} addresses with {self.merged_lines} rows total, in {time.time()-t} seconds.')
+        for address in self.large_addresses:
+            self.merge_single_address(address, large=True)
+        print(
+            f'Done merging on {self.merged_wallets} addresses with {self.merged_lines} rows total, in {time.time() - t} seconds.')
 
-
-    def merge_single_address(self,address: str):
-        locations = self.check_locations(address,self.vector_dirs)
-        print(f'Merging {address}. So far found {self.merged_lines} unique rows, {self.merged_wallets} wallets, extracted {self.extracted_features} features.', end='\r')
-        if len(locations) == 0:
-            return
-        elif len(locations) == 1:
-            temp_vector = pd.read_csv(f'{locations[0]}/{address}.csv')
-        elif len(locations) >1 :
-            temp_vector = [pd.read_csv(f'{loc}/{address}.csv') for loc in locations]
-            temp_vector = pd.concat(temp_vector)
+    def merge_single_address(self, address: str, large=False):
+        if not large:
+            locations = self.check_locations(address, self.vector_dirs)
+            print(
+                f'Merging {address}. So far found {self.merged_lines} unique rows, {self.merged_wallets} wallets, extracted {self.extracted_features} features.',
+                end='\r')
+            if len(locations) == 0:
+                return
+            elif len(locations) == 1:
+                temp_vector = pd.read_csv(f'{locations[0]}/{address}.csv')
+            elif len(locations) > 1:
+                temp_vector = [pd.read_csv(f'{loc}/{address}.csv') for loc in locations]
+                temp_vector = pd.concat(temp_vector)
+            if len(temp_vector) > 5000:
+                self.large_addresses.add(address)
+                temp_vector.to_csv(LARGE_ADDRESS_VECTORS_PATH + address + '.csv')
+                return
+        else:
+            temp_vector = pd.read_csv(LARGE_ADDRESS_VECTORS_PATH + address + '.csv')
+        temp_vector = temp_vector.astype({'valueUSD':np.float64,'feeUSD':np.float64})
         temp_vector.drop_duplicates(inplace=True)
         temp_vector.sort_values(by=['tx_index'], inplace=True)
-        temp_vector.groupby(["tx_index", "tx_type", "hash"], as_index=False).agg(AGG_DICT,inplace=True)
+        temp_vector.groupby(["tx_index", "tx_type", "hash"], as_index=False).agg(AGG_DICT, inplace=True)
         temp_vector = self.updateWalletVector(temp_vector)
         temp_vector.to_csv(ADDRESS_VECTORS_PATH + address + '.csv')
-        self.extract_features(address,temp_vector)
+        self.extract_features(address, temp_vector)
         self.merged_lines += len(temp_vector)
         self.merged_wallets += 1
 
-
-    def extract_features(self,address: str,wallet_df : pd.DataFrame):
+    def extract_features(self, address: str, wallet_df: pd.DataFrame):
         try:
             features = Analysis.extract_features_USD(wallet_df)
             features['tags'] = self.address_book[address]
-            with open(FEATURE_BOOK_PATH,'a') as f:
+            with open(FEATURE_BOOK_PATH, 'a') as f:
                 csv.writer(f).writerow(features)
                 f.close()
             self.extracted_features += 1
         except Exception as e:
-            self.write_exrtaction_log(e,address)
-
-
+            self.write_exrtaction_log(e, address)
 
     def get_vector_dirs(self):
         dir_names = sorted([os.path.join('/root/', x) for x in os.listdir('/root') if 'address_vectors_test' in x])
         dir_sets = [set([x for x in os.listdir(dirname) if '.csv' in x]) for dirname in dir_names]
         return list(zip(dir_names, dir_sets))
 
-
-    def check_locations(self,name,dirs_contents):
+    def check_locations(self, name, dirs_contents):
         name = f'{name}.csv'
         return [x[0] for x in dirs_contents if name in x[1]]
 
-
-    def update_range_multiproc(self,addresses,start=None,stop=None):
+    def update_range_multiproc(self, addresses, start=None, stop=None):
         chain = blocksci.Blockchain('/root/config.json')
         self.found_wallets = set()
         self.found_txes = 0
         print(f'Running on {stop - start} blocks. First block is {start}.')
         t = time.time()
-        chain.map_blocks(self.update_block,start=start,end=stop,cpu_count=4)
-        print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
+        chain.map_blocks(self.update_block, start=start, end=stop, cpu_count=4)
+        print(
+            f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
 
-
-    def update_range(self,addresses ,start=None,stop=None):
+    def update_range(self, addresses, start=None, stop=None):
         """
         Creates or updates .csv file containing tx information of the selected addresses.
         :param addresses: Array of addresses.
@@ -176,8 +184,9 @@ class AddressBook:
             t = time.time()
             [self.update_block(block) for block in chain.blocks]
 
-        print(f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.',end='\r')
-
+        print(
+            f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.',
+            end='\r')
 
     def update_block(self, block: blocksci.Block):
         """
@@ -191,9 +200,8 @@ class AddressBook:
             print(f'Reached block no.{block.height}')
             self.write_log(block)
         [self.write_tx(add[0], add[1], add[2], idx, tx) for idx, tx in enumerate(block.txes.to_list()) for add in
-             self.tx_to_address_list(tx)]
-        print(f'Done in {time.time()-t} seconds.',end='\r')
-
+         self.tx_to_address_list(tx)]
+        print(f'Done in {time.time() - t} seconds.', end='\r')
 
     def write_tx(self, address: str, tx_type: int, address_idx_in_tx: int, tx_idx_in_block: int, tx: blocksci.Tx):
         """
@@ -216,25 +224,23 @@ class AddressBook:
             with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'a') as f:
                 csv.writer(f).writerow([tx_type,
                                         tx_value,
-                                         0,
-                                         (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
-                                         0,
-                                         tx.block_time,
-                                         tx.hash.__str__(),
-                                         tx.index])
+                                        0,
+                                        (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
+                                        0,
+                                        tx.block_time,
+                                        tx.hash.__str__(),
+                                        tx.index])
             print(f'Added {address} in tx no.{tx_idx_in_block}', end='\r')
         except Exception as e:
             print(e)
-
 
     def make_wallet_vector(self, address: str):
         """
         Creates an empty .csv file for the desired address.
         """
-        with open(os.path.join(ADDRESS_VECTORS_UPDATE,address+'.csv'),'w') as f:
-            csv.writer(f).writerow(['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash','tx_index'])
+        with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'w') as f:
+            csv.writer(f).writerow(['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash', 'tx_index'])
             f.close()
-
 
     def get_value(self, tx: blocksci.Tx, tx_type: int, index: int):
         """
@@ -251,7 +257,6 @@ class AddressBook:
         except Exception as e:
             print(e)
 
-
     def tx_to_address_list(self, tx: blocksci.Tx):
         """
         :param tx: Blocksci tx
@@ -266,7 +271,6 @@ class AddressBook:
                          enumerate(tx.outs.address.to_list())
                          if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
         return ins_list + outs_list
-
 
     # def multi_tx_to_address_list(self, tx: blocksci.Tx):
     #     """
@@ -286,7 +290,6 @@ class AddressBook:
     #                      ]
     #     return ins_list + outs_list
 
-
     def updateWalletVector(self, wallet_vector: pd.DataFrame):
         """
         :param wallet_vector: A pandas dataframe holding the timeseries of a wallet.
@@ -296,7 +299,7 @@ class AddressBook:
             pass
         else:
             for idx in range(len(wallet_vector)):
-                if wallet_vector.iloc[idx]['valueUSD'] == 0:
+                if wallet_vector.iloc[idx]['valueUSD'] == 0.0:
                     wallet_vector.iat[idx, 2] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['valueBTC'],
                                                                         wallet_vector.iloc[idx]['time'])
                     wallet_vector.iat[idx, 4] = self.cc.btc_to_currency(wallet_vector.iloc[idx]['feeBTC'],
@@ -304,20 +307,19 @@ class AddressBook:
                     wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
         return wallet_vector
 
-
     @staticmethod
     def timeToUnix(date_time):
-        return time.mktime(datetime.datetime.strptime(date_time,"%Y-%m-%d %H:%M:%S").timetuple())
+        return time.mktime(datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S").timetuple())
 
-
-    def plot_wallet_vector(self, address: str, wallet_vector: pd.DataFrame, size: float, save=False, wallet_tags=None, symmetry=True):
+    def plot_wallet_vector(self, address: str, wallet_vector: pd.DataFrame, size: float, save=False, wallet_tags=None,
+                           symmetry=True):
         """
         Plots the tx value of every tx of the desired wallet, over time.
         Inputs are colored blue, outputs in red.
         """
         plt.close()
         if symmetry:
-            wallet_vector.valueUSD = np.multiply(wallet_vector.valueUSD,wallet_vector.tx_type)
+            wallet_vector.valueUSD = np.multiply(wallet_vector.valueUSD, wallet_vector.tx_type)
         scatter = plt.scatter(wallet_vector.time,
                               wallet_vector.valueUSD,
                               c=wallet_vector.tx_type,
@@ -340,41 +342,45 @@ class AddressBook:
             plt.show()
 
 
-def test_n_times_multi(n,start,stop):
+def test_n_times_multi(n, start, stop):
     test_results = []
     for test in range(n):
         test_results.append(test_multi_update(start, stop))
     return test_results
 
-def test_n_times(n,start,stop):
+
+def test_n_times(n, start, stop):
     test_results = []
     for test in range(n):
-        test_results.append(test_update(start,stop))
+        test_results.append(test_update(start, stop))
     return test_results
 
-def test_update(start,stop,checkpoint=None):
+
+def test_update(start, stop, checkpoint=None):
     ab = AddressBook()
-    t =time.time()
+    t = time.time()
     if checkpoint:
-        ab.found_wallets=set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_UPDATE)])
+        ab.found_wallets = set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_UPDATE)])
         print(f'Starting with {len(ab.found_wallets)}.')
         ab.update_range(ab.address_book.keys(), start=checkpoint, stop=stop)
     else:
-        ab.update_range(ab.address_book.keys(),start=start,stop=stop)
-    print(f'Total time for 100 blocks:{time.time()-t}')
-    return time.time()-t
+        ab.update_range(ab.address_book.keys(), start=start, stop=stop)
+    print(f'Total time for 100 blocks:{time.time() - t}')
+    return time.time() - t
 
-def test_multi_update(start,stop):
+
+def test_multi_update(start, stop):
     ab = AddressBook()
-    t =time.time()
-    ab.update_range_multiproc(ab.address_book.keys(),start=start,stop=stop)
-    print(f'Total time for 100 blocks:{time.time()-t}')
-    return time.time()-t
+    t = time.time()
+    ab.update_range_multiproc(ab.address_book.keys(), start=start, stop=stop)
+    print(f'Total time for 100 blocks:{time.time() - t}')
+    return time.time() - t
 
-def test_merge(test_set = None):
+
+def test_merge(test_set=None):
     ab = AddressBook()
     if not test_set:
-        ab.update_addresses = set(random.sample(ab.address_book.keys(),100))
+        ab.update_addresses = set(random.sample(ab.address_book.keys(), 100))
         test_set = ab.update_addresses
     else:
         ab.update_addresses = test_set
@@ -386,10 +392,11 @@ def test_merge(test_set = None):
     ab.merge_vectors()
     return test_set
 
+
 def merge_all():
     ab = AddressBook()
-    found_addresses = set([address.replace('.csv','') for address in os.listdir(ADDRESS_VECTORS_PATH)])
-    ab.update_addresses  = set(ab.address_book.keys()).difference(set(found_addresses))
+    found_addresses = set([address.replace('.csv', '') for address in os.listdir(ADDRESS_VECTORS_PATH)])
+    ab.update_addresses = set(ab.address_book.keys()).difference(set(found_addresses))
     ab.merge_vectors()
 
 
