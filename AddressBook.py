@@ -22,9 +22,6 @@ POOL = Pool(processes=4)
 
 # to do:
 
-# 1. Make hist plot of all elkys features.
-# 2. Find a way to describe the distribution of tx fees and values - samples - 1000 blocks.
-# 3. Talk to Max about using his email!
 
 
 class AddressBook:
@@ -64,8 +61,9 @@ class AddressBook:
     def write_exrtaction_log(self,e,address):
         t = time.time()
         with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
-            log.write( f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
-                f'<- Extraction error in {address}: {e}. ->')
+            csv.writer(log).writerow([time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
+                                      address,
+                                      e])
             log.close()
 
 
