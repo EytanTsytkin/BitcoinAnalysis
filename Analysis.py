@@ -182,9 +182,9 @@ def extract_features_BTC(df):
 def heat_cor_view(big_df,wanted_method : str):
     # i referred the input as pandas but this is still raw function
     df_spear_corr = big_df.corr(method=wanted_method)
-    im = plt.imshow(df_spear_corr, cmap=plt.get_cmap('coolwarm'))
-    plt.xticks(np.arange(big_df.shape[1]), big_df.columns, rotation=90)
-    plt.yticks(np.arange(big_df.shape[1]), big_df.columns_)
+    im = plt.imshow(df_spear_corr, cmap=plt.get_cmap('bwr'))
+    plt.xticks(np.arange(big_df.shape[1]-1), big_df.columns[:-1], rotation=90)
+    plt.yticks(np.arange(big_df.shape[1]-1), big_df.columns[:-1])
     plt.colorbar()
     plt.show()
     plt.close()
@@ -196,8 +196,11 @@ def some_statistics_on_features(big_df,wanted_plot: str):
     ncol = 3
     fig, axes = plt.subplots(nrow, ncol)
     axes = axes.flat
-    for i in range(big_df.shape[1]):
+    print("hey")
+    for i in range(len(axes)):
+        print(len(axes))
         big_df.iloc[:,i].plot(kind=wanted_plot, ax=axes[i])
-
+    print("im here")
+    plt.savefig('/mnt/plots/small_statistics.png')
 
 
