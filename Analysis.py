@@ -26,7 +26,7 @@ def timeToUnix(datetime):
     return time.mktime(datetime.timetuple())
 
 def BTCtoUSD(btc,time):
-    return cc.btc_to_currency(btc, time)
+    return CC.btc_to_currency(btc, time)
 
 def checkAddress(blockchain,wallet):
     try:
@@ -49,19 +49,6 @@ def extract_features_USD(df):
     """
 
     """
-    # Added type Odds to symmetry score. Feel free to use it/work on it
-    # type_odds = df.tx_type.value_counts().values[0]/df.tx_type.value_counts().values[1] #values[0] is outputs
-
-    # I changed activity density so it would calculate the avg and std time between txs.
-    #life_time = df.time.iloc[-1] - df.time.iloc[1]
-    #activity_density = df.time.std()/60  # std in minutes
-
-    # Added all of these guys under value statistics. awesome features love this shit yo
-    # dollar_obtain_per_tx = df.loc[df.tx_type == 1].valueUSD.sum()/df.tx_type.value_counts().values[0]
-    # dollar_spent_per_tx = df.loc[df.tx_type == -1].valueUSD.sum()/df.tx_type.value_counts().values[1]
-    # max_fee = df.feeUSD.max #most values is 0 so need to think if we want to recalculte or take diff from 0
-    # total_num_tx = df.shape[0]
-    # total_dollar = df.valueUSD.sum()
     features =  activity_density(df) +  symmetry_score(df) + value_statistics(df)
     return features
 
@@ -204,3 +191,38 @@ def some_statistics_on_features(big_df,wanted_plot: str):
     plt.savefig('/mnt/plots/small_statistics.png')
 
 
+def extract_sum_txs(block):
+    return (BTCtoUSD(sum([tx.input_value for tx in block.txes.to_list()])*SATOSHI,block.time),
+            BTCtoUSD(sum([tx.fee for tx in block.txes.to_list()]) * SATOSHI, block.time),
+            block.txes.size)
+
+
+
+def extract_range(start,end):
+    """
+
+    :param start: First block
+    :param end: Last Block
+    :return: Returns an array: [avg_tx_usd, avg_fee_usd)
+    """
+    ti = time.time()
+    print(f'Reading block no. {start}..',end='\r')
+    temp_array =  sum(np.array(CHAIN.map_blocks(extract_sum_txs,start=start,end=end,cpu_count=4)))
+    print(f'Done in {time.time()-ti} seconds.')
+    return np.array([temp_array[0]/temp_array[2], temp_array[1]/temp_array[2]])
+
+
+def make_average_tx_and_fee_dict():
+    CHAIN = chain()
+    CC = cc()
+    t = time.time()
+    print('Strated extraction..')
+    prob_dict = {(1000*k):extract_range((1000*k),((1000*k)+999)) for k in range(0,665)}
+    print(f'Done, in {time.time()-t} seconds. Saving..')
+    with open('/root/address_book/block_probability_distribution/prob_dict.json','w') as f:
+        json.dump(prob_dict,f)
+        f.close()
+    print('Done. Have a nice day!')
+
+if __name__ == '__main__':
+    make_average_tx_and_fee_dict()
