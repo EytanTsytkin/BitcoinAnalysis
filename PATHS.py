@@ -1,7 +1,7 @@
 ABUSE_PATH = '/root/abuse_data/abuse.csv'
 ABUSE_CORPUS_PATH = '/root/abuse_data/abuse_corpus.mm'
 ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
-ADDRESS_VECTORS_UPDATE = '/root/address_vectors_test/'
+ADDRESS_VECTORS_UPDATE = '/root/address_vectors_test_dan/'
 ADDRESS_VECTORS_PATH = '/root/address_vectors_merged4/'
 LARGE_ADDRESS_VECTORS_PATH = '/root/address_vectors_large/'
 FEATURE_BOOK_PATH = '/root/address_book/feature_book2.csv'
