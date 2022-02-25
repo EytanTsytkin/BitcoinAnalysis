@@ -6,19 +6,15 @@ import blocksci
 import datetime
 import numpy as np
 import pandas as pd
+from ast import literal_eval
 from matplotlib import pyplot as plt
 
 from PATHS import *
 
-# To Do:
-
-# 1. Start classification models!
-# 2. Get the distribution of tx value and tx fee for every 1000 blocks - split to bins: 0-10$,10-50$,50-250$,250-1000$,1000$+
-# 3. Get the distribution of num tx maybe? using blocksci tho
-# 4. Make an indexing fuction - change to keys of probdict to the tx.index of the first tx of each block in keys.
-# 5. Maybe get some more data of recent wallets man
-
-# 6. Eat some ice cream yo
+# Lets make this one the main feature file!!
+# Im commenting out all of the old stuff and moving them down.
+# feel free to delete them if you dont use them :)
+# most of them are duplicates of stuff in addressBook.py anyway
 
 def chain():
     return blocksci.Blockchain(CONFIG_PATH)
@@ -32,7 +28,7 @@ def timeToUnix(datetime):
     return time.mktime(datetime.timetuple())
 
 def BTCtoUSD(btc,time):
-    return cc.btc_to_currency(btc, time)
+    return CC.btc_to_currency(btc, time)
 
 def checkAddress(blockchain,wallet):
     try:
@@ -148,7 +144,11 @@ def value_statistics(df):
         dollar_spent_per_tx, # 'dollar_spent_per_tx' :
         obtain_spent_ratio, # 'obtain_spent_ratio' :
         df.valueUSD.std(), # 'tx_value_std' :
+        #'tx_value_prob_mean' : None, # this uses the probabilty of having the tx value in its' block
+        #'tx_value_prob_std' : None, # this uses the probabilty of having the tx value in its' block
         df.feeUSD.max(),  # 'max_fee' :  most values is 0 so need to think if we want to recalculte or take diff from 0
+        # 'fee_prob_mean' :  None, # this uses the probabilty of having the tx fee in its' block
+        # 'fee_prob_std' : None, # this uses the probabilty of having the tx fee in its' block
         df.shape[0],  # 'total_num_tx' :
         df.valueUSD.sum(), # total_dollar' :
         wallet_type # wallet_type' :
@@ -191,23 +191,28 @@ def heat_cor_view(big_df,wanted_method : str):
     im = plt.imshow(df_spear_corr, cmap=plt.get_cmap('bwr'))
     plt.xticks(np.arange(big_df.shape[1]-1), big_df.columns[:-1], rotation=90)
     plt.yticks(np.arange(big_df.shape[1]-1), big_df.columns[:-1])
+    plt.tight_layout()
     plt.colorbar()
     plt.show()
     plt.close()
+
 
 def some_statistics_on_features(big_df,wanted_plot: str):
     # the same as above
     #here just initial numbers we will know better when will have the size of the big df
     nrow = big_df.shape[1]//3
     ncol = 3
-    fig, axes = plt.subplots(nrow, ncol)
+    fig, axes = plt.subplots(nrow, ncol,figsize=(20,20))
     axes = axes.flat
     print("hey")
     for i in range(len(axes)):
         print(len(axes))
-        big_df.iloc[:,i].plot(kind=wanted_plot, ax=axes[i])
+        big_df.iloc[:,i].plot(kind=wanted_plot,title=big_df.columns[i] ,ax=axes[i],bins=100)
     print("im here")
-    plt.savefig('/mnt/plots/small_statistics.png')
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+    # plt.savefig('/mnt/plots/small_statistics.png')
 
 
 def extract_sum_txs(block):
@@ -232,6 +237,8 @@ def extract_range(start,end):
 
 
 def make_average_tx_and_fee_dict():
+    CHAIN = chain()
+    CC = cc()
     t = time.time()
     print('Strated extraction..')
     prob_dict = {(1000*k):extract_range((1000*k),((1000*k)+999)) for k in range(0,665)}
@@ -240,7 +247,5 @@ def make_average_tx_and_fee_dict():
         json.dump(prob_dict,f)
         f.close()
     print('Done. Have a nice day!')
-
-
 
 
