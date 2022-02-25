@@ -343,11 +343,11 @@ class AddressBook:
         n = len(ticks) // 5
         plt.gca().set_xticks(ticks[::n])
         plt.xticks(rotation=60)
-        plt.tight_layout()
         plt.autoscale()
         plt.suptitle('Transcations over time')
         plt.ylabel('Tx Value USD')
         plt.xlabel('Time')
+        plt.tight_layout()
         if wallet_tags:
             tags = ''
             for tag in wallet_tags[:2]:
