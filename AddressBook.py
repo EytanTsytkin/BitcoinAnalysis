@@ -244,7 +244,7 @@ class AddressBook:
                                         tx.hash.__str__(),
                                         tx.index])
             print(f'Added {address} in tx no.{tx_idx_in_block}', end='\r')
-            print(f'write_tx done in {time.time() - t} seconds.')
+            print(f'tx_to_address_list done in {time.time() - t} seconds.')
         except Exception as e:
             print(e)
 
@@ -263,18 +263,13 @@ class AddressBook:
         :param index: index of wallet in this tx.
         :return: The amount transacted in/out of this wallet.
         """
-        t = time.time()
         try:
             if tx_type == -1:
-                print(f'get value done in {time.time() - t} seconds.')
                 return tx.ins.value[index] * SATOSHI
             elif tx_type == 1:
-                print(f'get_value done in {time.time() - t} seconds.')
                 return tx.outs.value[index] * SATOSHI
         except Exception as e:
             print(e)
-            print(f'get_value failed in {time.time() - t} seconds.')
-
 
     def tx_to_address_list(self, tx: blocksci.Tx):
         """
