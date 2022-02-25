@@ -9,6 +9,7 @@ import datetime
 import numpy as np
 import pandas as pd
 from PATHS import *
+import matplotlib.dates as mdates
 from multiprocessing import Pool
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
@@ -331,11 +332,13 @@ class AddressBook:
         plt.close()
         if symmetry:
             wallet_vector.valueUSD = np.multiply(wallet_vector.valueUSD, wallet_vector.tx_type)
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
         scatter = plt.scatter(wallet_vector.time,
                               wallet_vector.valueUSD,
                               c=wallet_vector.tx_type,
                               cmap='coolwarm',
                               s=size)
+
         plt.suptitle('Transcations over time')
         plt.ylabel('Tx Value USD')
         plt.xlabel('Time')
@@ -411,5 +414,3 @@ def merge_all():
     ab.merge_vectors()
 
 
-if __name__ == '__main__':
-    merge_all()
