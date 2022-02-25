@@ -344,6 +344,7 @@ class AddressBook:
         plt.gca().set_xticks(ticks[::n])
         plt.xticks(rotation=60)
         plt.tight_layout()
+        plt.autoscale()
         plt.suptitle('Transcations over time')
         plt.ylabel('Tx Value USD')
         plt.xlabel('Time')
