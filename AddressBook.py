@@ -9,7 +9,7 @@ import blocksci
 import datetime
 import numpy as np
 import pandas as pd
-import logging
+# import logging
 from PATHS import *
 from multiprocessing import Pool
 from matplotlib import pyplot as plt
@@ -21,8 +21,7 @@ AGG_DICT = {"valueBTC": "sum",
             "feeUSD": "sum",
             "time": "first"}
 POOL = Pool(processes=4)
-logger = logging.Logger("logger")
-logging.basicConfig(stream=sys.stdout, encoding='utf-8', level=logging.DEBUG)
+
 
 # to do:
 
