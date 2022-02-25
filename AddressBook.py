@@ -349,11 +349,16 @@ class AddressBook:
         plt.xlabel('Time')
         plt.tight_layout()
         if wallet_tags:
-            tags = ''
-            for tag in wallet_tags[:2]:
-                tags = tags + ', ' + str(tag)
-            plt.title(f'Wallet tags: {tags}')
-            plt.gca().add_artist(plt.legend([address], loc=4))
+            try:
+                tags = ''
+                for tag in wallet_tags[:2]:
+                    tags = tags + ', ' + str(tag)
+                plt.title(f'Wallet tags: {tags}')
+                plt.gca().add_artist(plt.legend([address], loc=4))
+            except:
+                tags = str(wallet_tags[0])
+                plt.title(f'Wallet tags: {tags}')
+                plt.gca().add_artist(plt.legend([address], loc=4))
         plt.legend(handles=scatter.legend_elements()[0], labels=['Input', 'Output'])
         if save:
             filename = f'{PLOTS_PATH}AV_{address}.png'
