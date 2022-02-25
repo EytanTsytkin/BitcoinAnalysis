@@ -343,7 +343,7 @@ class AddressBook:
         if len(ticks) >= 5:
             n = len(ticks) // 5
         else:
-            n = len(ticks)
+            n = 1
         plt.gca().set_xticks(ticks[::n])
         plt.xticks(rotation=60)
         plt.autoscale()
