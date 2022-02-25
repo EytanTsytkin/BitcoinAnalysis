@@ -341,7 +341,7 @@ class AddressBook:
         plt.xlabel('Time')
         if wallet_tags:
             tags = ''
-            for tag in wallet_tags:
+            for tag in wallet_tags[:2]:
                 tags = tags + ', ' + tag
             plt.title(f'Wallet tags: {tags}')
             plt.gca().add_artist(plt.legend([address], loc=4))

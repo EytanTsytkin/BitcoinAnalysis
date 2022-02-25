@@ -42,7 +42,7 @@ def timeToUnix(datetime):
     return time.mktime(datetime.timetuple())
 
 def BTCtoUSD(btc,time):
-    return CC.btc_to_currency(btc, time)
+    return cc.btc_to_currency(btc, time)
 
 def checkAddress(blockchain,wallet):
     try:
