@@ -329,6 +329,7 @@ class AddressBook:
         Plots the tx value of every tx of the desired wallet, over time.
         Inputs are colored blue, outputs in red.
         """
+        print(f'Plotting {address}..',end='\r')
         plt.close()
         if symmetry:
             wallet_vector.valueUSD = np.multiply(wallet_vector.valueUSD, wallet_vector.tx_type)
