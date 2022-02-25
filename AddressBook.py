@@ -198,7 +198,7 @@ class AddressBook:
             [self.update_block(block) for block in chain.blocks]
 
         print(
-            f'Done in {time.time() - t} seconds. Found a total of wallets and {self.found_txes} txes.',
+            f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.',
             end='\r')
 
     def update_block(self, block: blocksci.Block):
@@ -244,7 +244,7 @@ class AddressBook:
                                         tx.hash.__str__(),
                                         tx.index])
             print(f'Added {address} in tx no.{tx_idx_in_block}', end='\r')
-            print(f'tx_to_address_list done in {time.time() - t} seconds.')
+            print(f'tx_to_address_list done in {time.time() - t} seconds.', end='\r')
         except Exception as e:
             print(e)
 
@@ -285,7 +285,7 @@ class AddressBook:
             outs_list = [(address.address_string, 1, out_idx) for out_idx, address in
                          enumerate(tx.outs.address.to_list())
                          if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
-        print(f'tx_to_address_list done in {time.time() - t} seconds.')
+        print(f'tx_to_address_list done in {time.time() - t} seconds.', end='\r')
         return ins_list + outs_list
 
     # def multi_tx_to_address_list(self, tx: blocksci.Tx):
