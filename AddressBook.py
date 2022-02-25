@@ -342,7 +342,7 @@ class AddressBook:
         if wallet_tags:
             tags = ''
             for tag in wallet_tags[:2]:
-                tags = tags + ', ' + tag
+                tags = tags + ', ' + str(tag)
             plt.title(f'Wallet tags: {tags}')
             plt.gca().add_artist(plt.legend([address], loc=4))
         plt.legend(handles=scatter.legend_elements()[0], labels=['Input', 'Output'])
