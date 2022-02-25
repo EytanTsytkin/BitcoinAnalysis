@@ -340,7 +340,10 @@ class AddressBook:
                               cmap='coolwarm',
                               s=size)
         ticks = plt.gca().get_xticks()
-        n = len(ticks) // 5
+        if len(ticks) >= 5:
+            n = len(ticks) // 5
+        else:
+            n = len(ticks)
         plt.gca().set_xticks(ticks[::n])
         plt.xticks(rotation=60)
         plt.autoscale()
