@@ -27,7 +27,9 @@ def string_to_list(string):
     return lst
 
 def get_feature_book():
-    return pd.read_csv(FEATURE_BOOK_PATH, index_col=["address"], converters={"tags":string_to_list})
+    feature_book = pd.read_csv(FEATURE_BOOK_PATH, index_col=["address"], converters={"tags":string_to_list})
+    return feature_book[feature_book.tags.astype(bool)]
+
 def chain():
     return blocksci.Blockchain(CONFIG_PATH)
 
