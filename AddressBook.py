@@ -366,6 +366,7 @@ class AddressBook:
                 plt.title(f'Wallet tags: {tags}')
                 plt.gca().add_artist(plt.legend([address], loc=4))
         plt.legend(handles=scatter.legend_elements()[0], labels=['Input', 'Output'])
+        print(f'Plotting {address}, Successs..', end='\r')
         if save:
             filename = f'{PLOTS_PATH}AV_{address}.png'
             plt.savefig(filename)
