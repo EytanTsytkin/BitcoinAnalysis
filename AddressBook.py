@@ -1,6 +1,5 @@
 import os
 import csv
-import sys
 import time
 import json
 import random
@@ -9,7 +8,6 @@ import blocksci
 import datetime
 import numpy as np
 import pandas as pd
-import logging
 from PATHS import *
 from multiprocessing import Pool
 from matplotlib import pyplot as plt
@@ -21,8 +19,7 @@ AGG_DICT = {"valueBTC": "sum",
             "feeUSD": "sum",
             "time": "first"}
 POOL = Pool(processes=4)
-logger = logging.Logger("logger")
-logging.basicConfig(stream=sys.stdout, encoding='utf-8', level=logging.DEBUG)
+
 
 # to do:
 
@@ -227,7 +224,7 @@ class AddressBook:
         :param tx: the Tx object.
         :return: no return - updates the
         """
-        t = time.time()
+
         self.found_txes += 1
         if not address in self.found_wallets:
             self.make_wallet_vector(address)
@@ -245,7 +242,6 @@ class AddressBook:
                                         tx.hash.__str__(),
                                         tx.index])
             print(f'Added {address} in tx no.{tx_idx_in_block}', end='\r')
-            print(f'tx_to_address_list done in {time.time() - t} seconds.', end='\r')
         except Exception as e:
             print(e)
 
@@ -279,14 +275,12 @@ class AddressBook:
                                       type (±1)
                                       index in tx (used for value extraction)
         """
-        t = time.time()
         if hasattr(tx.ins.address, 'to_list'):
             ins_list = [(address.address_string, -1, in_idx) for in_idx, address in enumerate(tx.ins.address.to_list())
                         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
             outs_list = [(address.address_string, 1, out_idx) for out_idx, address in
                          enumerate(tx.outs.address.to_list())
                          if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
-        print(f'tx_to_address_list done in {time.time() - t} seconds.', end='\r')
         return ins_list + outs_list
 
     # def multi_tx_to_address_list(self, tx: blocksci.Tx):
@@ -376,10 +370,14 @@ def test_n_times(n, start, stop):
 def test_update(start, stop, checkpoint=None):
     ab = AddressBook()
     t = time.time()
-    found_addresses = set([address.replace('.csv', '') for address in os.listdir(ADDRESS_VECTORS_PATH)])
-    ab.update_range(set(list(ab.address_book.keys())).difference(found_addresses), start=start, stop=stop)
-    print(f'Total time for {stop-start}blocks:{time.time() - t}')
-    return
+    if checkpoint:
+        ab.found_wallets = set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_UPDATE)])
+        print(f'Starting with {len(ab.found_wallets)}.')
+        ab.update_range(ab.address_book.keys(), start=checkpoint, stop=stop)
+    else:
+        ab.update_range(ab.address_book.keys(), start=start, stop=stop)
+    print(f'Total time for 100 blocks:{time.time() - t}')
+    return time.time() - t
 
 
 def test_multi_update(start, stop):
@@ -414,4 +412,4 @@ def merge_all():
 
 
 if __name__ == '__main__':
-    test_update(190000,190100)
+    merge_all()
