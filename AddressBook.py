@@ -340,9 +340,10 @@ class AddressBook:
                               cmap='coolwarm',
                               s=size)
         ticks = plt.gca().get_xticks()
-        n = len(ticks) // 10  # Show 10 ticks.
+        n = len(ticks) // 5
         plt.gca().set_xticks(ticks[::n])
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=60)
+        plt.tight_layout()
         plt.suptitle('Transcations over time')
         plt.ylabel('Tx Value USD')
         plt.xlabel('Time')
