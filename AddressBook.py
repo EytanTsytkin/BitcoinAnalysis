@@ -339,6 +339,9 @@ class AddressBook:
                               c=wallet_vector.tx_type,
                               cmap='coolwarm',
                               s=size)
+        ticks = plt.gca().get_xticks()
+        n = len(ticks) // 10  # Show 10 ticks.
+        plt.gca().set_xticks(ticks[::n])
         plt.xticks(rotation=90)
         plt.suptitle('Transcations over time')
         plt.ylabel('Tx Value USD')
