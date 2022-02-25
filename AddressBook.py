@@ -332,7 +332,7 @@ class AddressBook:
         plt.close()
         if symmetry:
             wallet_vector.valueUSD = np.multiply(wallet_vector.valueUSD, wallet_vector.tx_type)
-        # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
         scatter = plt.scatter(wallet_vector.time.apply(datetime.datetime.fromtimestamp),
                               wallet_vector.valueUSD,
                               c=wallet_vector.tx_type,
