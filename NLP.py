@@ -6,16 +6,15 @@ import pandas as pd
 from nltk.corpus import stopwords
 from collections import defaultdict
 from PATHS import *
-from gensim import corpora, similarities, models, utils
+from gensim import corpora, models, utils
 from gensim.models.phrases import ENGLISH_CONNECTOR_WORDS
 from nltk.stem import WordNetLemmatizer
 import json
 import pyLDAvis
 import pyLDAvis.gensim
-from ast import literal_eval
-#texts = pd.read_csv("/root/abuse_data/texts.csv",usecols=["description"],converters={"description":literal_eval})
+
 # id2word = corpora.Dictionary.load("/root/abuse_data/id2word.dict")
-from nltk.stem import PorterStemmer
+
 
 
 
@@ -41,6 +40,12 @@ grammar = ('''
 
 
 def select_language_with_iso639_1(lang,abuse_data):
+    """
+
+    :param lang:
+    :param abuse_data:
+    :return: df that all description are from wanted language
+    """
     if len(lang) != 2:
         print("iso 369_1 language code needed")
     elif lang not in abuse_data.language.unique():
@@ -50,18 +55,36 @@ def select_language_with_iso639_1(lang,abuse_data):
 
 
 def clean_tokens(list_of_tokens):
+    """
+
+    :param list_of_tokens:
+    :return: remove all stopwords and punctuation from token_list
+    """
     stpwords = stopwords.words('english')
     filtered_list = [word for word in list_of_tokens if not (word in stpwords or word in string.punctuation)]
     return filtered_list
 
 
 def bigrams(words, bi_min=3, tre_min=50):
+    """
+
+    :param words:
+    :param bi_min:
+    :param tre_min:
+    :return:the bigram model
+    """
     bigram = models.Phrases(words, min_count=bi_min,threshold=tre_min,connector_words=ENGLISH_CONNECTOR_WORDS)
     bigram_mod = models.phrases.FrozenPhrases(bigram)
     return bigram_mod
 
 
 def lemmatization(sent,grammer):
+    """
+
+    :param sent:
+    :param grammer:
+    :return: lemmatize the text and filter the tokens only to adverbs, nouns, adjectives and verbs
+    """
     lemmatizer = WordNetLemmatizer()
     texts_out = []
     chunkParser = nltk.RegexpParser(grammer)
@@ -82,6 +105,11 @@ def comput_bigram_mod(sentence,bigram_model):
 
 
 def create_corpus(series):
+    """
+
+    :param series:
+    :return: create from english description the corpus,id2word,and tokens after filters
+    """
     str_series = series.str.lower()
     print("Tokenizing..\r")
     token_series = str_series.apply(utils.simple_preprocess,deacc=True)
@@ -168,7 +196,8 @@ def compute_coherence_values(dictionary, corpus, texts, limit=20, start=5, step=
     return model_list, coherence_values
 
 
-def visual():
+def visual(lda_model,corpus,id2word):
+    "visual the lda model on our text"
     vis6= pyLDAvis.gensim.prepare(lda_model,corpus,id2word)
     pyLDAvis.save_html(vis6,'/mnt/plots/lda_visual6')
 

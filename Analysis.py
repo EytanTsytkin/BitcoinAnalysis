@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from ast import literal_eval
 from matplotlib import pyplot as plt
-
+from sklearn.model_selection import GroupShuffleSplit
 from PATHS import *
 
 #featuers = pd.read_csv(FEATURE_BOOK_PATH,index_col=["address"],converters={"tags":literal_eval})#
@@ -28,6 +28,9 @@ def string_to_list(string):
 
 def get_feature_book():
     feature_book = pd.read_csv(FEATURE_BOOK_PATH, index_col=["address"], converters={"tags":string_to_list})
+    feature_book.drop("Unnamed: 0",inplace=True,axis=1)
+    feature_book.fillna(0, inplace=True)
+    feature_book = feature_book[feature_book.y != 3]
     return feature_book[feature_book.tags.astype(bool)]
 
 def chain():
@@ -263,3 +266,22 @@ def make_average_tx_and_fee_dict():
     print('Done. Have a nice day!')
 
 
+
+
+wanted_features = ["lifetime","tx_freq_mean","tx_freq_std","tx_type_odds","consecutive_in_tx_score","consecutive_out_tx_score","dollar_obtain_per_tx","dollar_spent_per_tx","tx_value_std","max_fee","total_num_tx","total_dollar","y"]
+
+
+def split_train_test(feature_df):
+    splitter = GroupShuffleSplit(test_size=.15, n_splits=1, random_state = 7)
+    split = splitter.split(feature_df, groups=feature_df['y'])
+    train_indx,test_indx = next(split)
+    return feature_df.iloc[train_indx], feature_df.iloc[test_indx]
+
+
+####
+# spectral clustring
+# herrcial cluster
+# mybe k means
+#xgboost
+#mybe catboost
+#desicion tree
