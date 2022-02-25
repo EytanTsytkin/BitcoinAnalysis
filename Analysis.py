@@ -245,7 +245,7 @@ def extract_range(start,end):
     """
     ti = time.time()
     print(f'Reading block no. {start}..',end='\r')
-    temp_array =  sum(np.array(CHAIN.map_blocks(extract_sum_txs,start=start,end=end,cpu_count=4)))
+    temp_array =  sum(np.array(chain.map_blocks(extract_sum_txs,start=start,end=end,cpu_count=4)))
     print(f'Done in {time.time()-ti} seconds.')
     return np.array([temp_array[0]/temp_array[2], temp_array[1]/temp_array[2]])
 
