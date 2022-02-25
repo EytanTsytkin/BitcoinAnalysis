@@ -234,15 +234,15 @@ class AddressBook:
             print(f'Added wallet vector for {address}', end='\r', )
         try:
             tx_value = self.get_value(tx, tx_type, address_idx_in_tx)
-            # with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'a') as f:
-            #     csv.writer(f).writerow([tx_type,
-            #                             tx_value,
-            #                             0,
-            #                             (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
-            #                             0,
-            #                             tx.block_time,
-            #                             tx.hash.__str__(),
-            #                             tx.index])
+            with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'a') as f:
+                csv.writer(f).writerow([tx_type,
+                                        tx_value,
+                                        0,
+                                        (tx_value / tx.input_value) * tx.fee if tx_type == -1 else 0,
+                                        0,
+                                        tx.block_time,
+                                        tx.hash.__str__(),
+                                        tx.index])
             print(f'Added {address} in tx no.{tx_idx_in_block}', end='\r')
             print(f'write_tx done in {time.time() - t} seconds.')
         except Exception as e:
