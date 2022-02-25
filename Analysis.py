@@ -11,11 +11,23 @@ from matplotlib import pyplot as plt
 
 from PATHS import *
 
+#featuers = pd.read_csv(FEATURE_BOOK_PATH,index_col=["address"],converters={"tags":literal_eval})#
+# from ast import literal_eval
 # Lets make this one the main feature file!!
 # Im commenting out all of the old stuff and moving them down.
 # feel free to delete them if you dont use them :)
 # most of them are duplicates of stuff in addressBook.py anyway
 
+def string_to_list(string):
+    try:
+        lst = literal_eval(string)
+
+    except:
+        lst = literal_eval(string.replace(", nan",""))
+    return lst
+
+def get_feature_book():
+    return pd.read_csv(FEATURE_BOOK_PATH, index_col=["address"], converters={"tags":string_to_list})
 def chain():
     return blocksci.Blockchain(CONFIG_PATH)
 
