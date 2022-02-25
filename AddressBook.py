@@ -339,7 +339,6 @@ class AddressBook:
                               c=wallet_vector.tx_type,
                               cmap='coolwarm',
                               s=size)
-        locator = mdates.DayLocator()
         plt.xticks(rotation=90)
         plt.suptitle('Transcations over time')
         plt.ylabel('Tx Value USD')
