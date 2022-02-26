@@ -290,7 +290,7 @@ def plot_basic_feature_statistics(df,wanted_plot: str,save=False):
     plt.close()
 
 
-def extract_sum_txs(block: blocksci.block):
+def extract_sum_txs(block):
     """
     returns the sum in USD of all transactions & their fees in a given block.
     Used to calculate distributions for probabilistic features.
