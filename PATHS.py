@@ -10,9 +10,10 @@ FEATURE_BOOK_PATH = '/root/address_book/feature_book2.csv'
 FREQ_DICT_EN = '/root/abuse_data/english_freq_dict.json'
 IMAGE_PATH = '/home/eytantsytkin/BitcoinAnalysis'
 LARGE_ADDRESS_VECTORS_PATH = '/root/address_vectors_large/'
+ML_PATH = '/root/ml/'
 PLOTS_PATH = '/mnt/plots/'
 TAGS_PATH = '/root/address_book/tags/'
-ML_PATH = '/root/ml/'
+
 
 
 

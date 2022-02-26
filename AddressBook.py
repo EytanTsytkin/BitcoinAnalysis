@@ -14,19 +14,7 @@ import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
-AGG_DICT = {"valueBTC": "sum",
-            "valueUSD": "sum",
-            "feeBTC": "sum",
-            "feeUSD": "sum",
-            "time": "first"}
-POOL = Pool(processes=4)
-
-
-# to do:
-
-# 1. Make hist plot of all elkys features.
-# 2. Find a way to describe the distribution of tx fees and values - samples - 1000 blocks.
-# 3. Talk to Max about using his email!
+# Class for tagging Bitcoin Addresses. Also extracts transaction history for wallets.
 
 
 class AddressBook:
@@ -57,40 +45,21 @@ class AddressBook:
         self.vector_dirs = self.get_vector_dirs()
         # self.executor = ThreadPoolExecutor(3)
 
+
     @staticmethod
     def load_book():
+        """
+        Loads the addressbook.
+        """
         with open(ADDRESSBOOK_PATH, 'r') as f:
             book = json.load(f)
             return book
 
-    def make_feature_book(self):
-        with open(FEATURE_BOOK_PATH,'w') as f:
-            csv.writer(f).writerow(
-                ["address","lifetime", "first_tx", "tx_freq_mean", "tx_freq_std", 'tx_type_odds', 'consecutive_in_tx_score',
-                 'consecutive_out_tx_score', 'dollar_obtain_per_tx', 'dollar_spent_per_tx', 'obtain_spent_ratio',
-                 'tx_value_std', 'max_fee', 'total_num_tx', 'total_dollar', 'wallet_type','tags']
-            )
-
-    def write_exrtaction_log(self, e, address):
-        t = time.time()
-        with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
-            csv.writer(log).writerow([time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
-                                      address,
-                                      e])
-            log.close()
-
-    def write_log(self, block: blocksci.Block):
-        t = time.time()
-        tot_wallets = len(self.found_wallets)
-        with open(f'{ADDRESS_VECTORS_UPDATE}logs.txt', 'a') as log:
-            log.write(
-                f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
-                f'<- Reached block no.{block.height}, Duration: {time.time() - t}. '
-                f'Wallets found: {tot_wallets}. '
-                f'Txes found: {self.found_txes} ->')
-            log.close()
 
     def merge_vectors(self):
+        """
+        Merges all of the collected data regarding wallet behaviour.
+        """
         t = time.time()
         print(f'Starting merge..')
         # POOL.map(self.merge_single_address, self.update_addresses)
@@ -102,7 +71,17 @@ class AddressBook:
         print(
             f'Done merging on {self.merged_wallets} addresses with {self.merged_lines} rows total, in {time.time() - t} seconds.')
 
+
     def merge_single_address(self, address: str, large=False):
+        """
+        Finds all locations where a .csv file of the given address exists,
+        and merges them into a single file (also sorts).
+        Extracts the features of the given wallet and adds to featurebook.
+        All merged .csvs are saved in ADDRESS_VECTORS_PATH.
+
+        Large - wallets with extreme amounts of transactions require long processing time.
+        to speed up data mining/data prep, large addresses are postponed to the end of the merge.
+        """
         if not large:
             locations = self.check_locations(address, self.vector_dirs)
             print(
@@ -131,7 +110,12 @@ class AddressBook:
         self.merged_lines += len(temp_vector)
         self.merged_wallets += 1
 
+
     def extract_features(self, address: str, wallet_df: pd.DataFrame):
+        """
+        Extracts features from the .csv file of the given address,
+        adds the features to FeatureBook.csv.
+        """
         try:
             features = []
             features.append(address)
@@ -144,16 +128,28 @@ class AddressBook:
         except Exception as e:
             self.write_exrtaction_log(e, address)
 
+
     def get_vector_dirs(self):
+        """
+        returns a list of all directories that contain .csv files of wallet transactions.
+        """
         dir_names = sorted([os.path.join('/root/', x) for x in os.listdir('/root') if 'address_vectors_test' in x])
         dir_sets = [set([x for x in os.listdir(dirname) if '.csv' in x]) for dirname in dir_names]
         return list(zip(dir_names, dir_sets))
 
+
     def check_locations(self, name, dirs_contents):
+        """
+        returns a list of directories where a .csv file with given name exists.
+        """
         name = f'{name}.csv'
         return [x[0] for x in dirs_contents if name in x[1]]
 
+
     def update_range_multiproc(self, addresses, start=None, stop=None):
+        """
+        Multiprocess version of the below function.
+        """
         chain = blocksci.Blockchain('/root/config.json')
         self.found_wallets = set()
         self.found_txes = 0
@@ -162,6 +158,7 @@ class AddressBook:
         chain.map_blocks(self.update_block, start=start, end=stop, cpu_count=4)
         print(
             f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.')
+
 
     def update_range(self, addresses, start=None, stop=None):
         """
@@ -201,6 +198,7 @@ class AddressBook:
             f'Done in {time.time() - t} seconds. Found a total of {self.found_wallets} wallets and {self.found_txes} txes.',
             end='\r')
 
+
     def update_block(self, block: blocksci.Block):
         """
         Iterates over the txes in a single block and writes them to the
@@ -215,6 +213,45 @@ class AddressBook:
         [self.write_tx(add[0], add[1], add[2], idx, tx) for idx, tx in enumerate(block.txes.to_list()) for add in
          self.tx_to_address_list(tx)]
         print(f'Done in {time.time() - t} seconds.', end='\r')
+
+
+    def tx_to_address_list(self, tx: blocksci.Tx):
+        """
+        :param tx: Blocksci tx
+        :return: list of tuples of 3: address,
+                                      type (±1)
+                                      index in tx (used for value extraction)
+        """
+        if hasattr(tx.ins.address, 'to_list'):
+            ins_list = [(address.address_string, -1, in_idx) for in_idx, address in enumerate(tx.ins.address.to_list())
+                        if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
+            outs_list = [(address.address_string, 1, out_idx) for out_idx, address in
+                         enumerate(tx.outs.address.to_list())
+                         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
+        return ins_list + outs_list
+
+
+    def multi_tx_to_address_list(self, tx: blocksci.Tx):
+        """
+        Multiprocess vesion of tx_to_address_list.
+        Currently placeholder.
+        :param tx: Blocksci tx
+        :return: list of tuples of 3: address,
+                                      type (±1)
+                                      index in tx (used for value extraction)
+        """
+    #     if hasattr(tx.ins.address, 'to_list'):
+    #         ins_list = [self.pool.map(lambda idx, address: (address.address_string, -1, idx)
+    #         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
+    #                                   , enumerate(tx.ins.address.to_list()))
+    #                     ]
+    #         outs_list = [self.pool.map(lambda idx, address: (address.address_string, 1, idx)
+    #         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
+    #                                    , enumerate(tx.outs.address.to_list()))
+    #                      ]
+    #     return ins_list + outs_list
+        pass
+
 
     def write_tx(self, address: str, tx_type: int, address_idx_in_tx: int, tx_idx_in_block: int, tx: blocksci.Tx):
         """
@@ -247,13 +284,6 @@ class AddressBook:
         except Exception as e:
             print(e)
 
-    def make_wallet_vector(self, address: str):
-        """
-        Creates an empty .csv file for the desired address.
-        """
-        with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'w') as f:
-            csv.writer(f).writerow(['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash', 'tx_index'])
-            f.close()
 
     def get_value(self, tx: blocksci.Tx, tx_type: int, index: int):
         """
@@ -270,38 +300,6 @@ class AddressBook:
         except Exception as e:
             print(e)
 
-    def tx_to_address_list(self, tx: blocksci.Tx):
-        """
-        :param tx: Blocksci tx
-        :return: list of tuples of 3: address,
-                                      type (±1)
-                                      index in tx (used for value extraction)
-        """
-        if hasattr(tx.ins.address, 'to_list'):
-            ins_list = [(address.address_string, -1, in_idx) for in_idx, address in enumerate(tx.ins.address.to_list())
-                        if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
-            outs_list = [(address.address_string, 1, out_idx) for out_idx, address in
-                         enumerate(tx.outs.address.to_list())
-                         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses)]
-        return ins_list + outs_list
-
-    # def multi_tx_to_address_list(self, tx: blocksci.Tx):
-    #     """
-    #     :param tx: Blocksci tx
-    #     :return: list of tuples of 3: address,
-    #                                   type (±1)
-    #                                   index in tx (used for value extraction)
-    #     """
-    #     if hasattr(tx.ins.address, 'to_list'):
-    #         ins_list = [self.pool.map(lambda idx, address: (address.address_string, -1, idx)
-    #         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
-    #                                   , enumerate(tx.ins.address.to_list()))
-    #                     ]
-    #         outs_list = [self.pool.map(lambda idx, address: (address.address_string, 1, idx)
-    #         if (hasattr(address, 'address_string') and address.address_string in self.update_addresses) else None
-    #                                    , enumerate(tx.outs.address.to_list()))
-    #                      ]
-    #     return ins_list + outs_list
 
     def updateWalletVector(self, wallet_vector: pd.DataFrame):
         """
@@ -320,9 +318,54 @@ class AddressBook:
                     wallet_vector.iat[idx, 5] = self.timeToUnix(wallet_vector.iloc[idx]['time'])
         return wallet_vector
 
+
+    def make_wallet_vector(self, address: str):
+        """
+        Creates an empty .csv file for the desired address.
+        """
+        with open(os.path.join(ADDRESS_VECTORS_UPDATE, address + '.csv'), 'w') as f:
+            csv.writer(f).writerow(['tx_type', 'valueBTC', 'valueUSD', 'feeBTC', 'feeUSD', 'time', 'hash', 'tx_index'])
+            f.close()
+
+
+    def make_feature_book(self):
+        """
+        Used when a new copy feature book in needed.
+        """
+        with open(FEATURE_BOOK_PATH, 'w') as f:
+            csv.writer(f).writerow(
+                ["address", "lifetime", "first_tx", "tx_freq_mean", "tx_freq_std", 'tx_type_odds',
+                 'consecutive_in_tx_score',
+                 'consecutive_out_tx_score', 'dollar_obtain_per_tx', 'dollar_spent_per_tx', 'obtain_spent_ratio',
+                 'tx_value_std', 'max_fee', 'total_num_tx', 'total_dollar', 'wallet_type', 'tags']
+            )
+
+
+    def write_exrtaction_log(self, e, address):
+        t = time.time()
+        with open(f'/root/address_book/logs/extraction_logs.csv', 'a') as log:
+            csv.writer(log).writerow([time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
+                                      address,
+                                      e])
+            log.close()
+
+
+    def write_log(self, block: blocksci.Block):
+        t = time.time()
+        tot_wallets = len(self.found_wallets)
+        with open(f'{ADDRESS_VECTORS_UPDATE}logs.txt', 'a') as log:
+            log.write(
+                f'\n {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))} '
+                f'<- Reached block no.{block.height}, Duration: {time.time() - t}. '
+                f'Wallets found: {tot_wallets}. '
+                f'Txes found: {self.found_txes} ->')
+            log.close()
+
+
     @staticmethod
     def timeToUnix(date_time):
         return time.mktime(datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S").timetuple())
+
 
     def plot_wallet_vector(self, address: str, wallet_vector: pd.DataFrame, size: float, save=False, wallet_tags=None,
                            symmetry=True):
@@ -375,6 +418,10 @@ class AddressBook:
             plt.show()
 
 
+AGG_DICT = {"valueBTC": "sum",
+            "valueUSD": "sum",
+            "feeBTC": "sum",
+            "feeUSD": "sum",
+            "time": "first"}
 
-
-
+POOL = Pool(processes=4)
