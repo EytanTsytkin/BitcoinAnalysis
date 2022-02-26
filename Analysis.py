@@ -30,7 +30,11 @@ def get_feature_book():
     feature_book = pd.read_csv(FEATURE_BOOK_PATH, index_col=["address"], converters={"tags":string_to_list})
     feature_book.drop("Unnamed: 0",inplace=True,axis=1)
     feature_book.fillna(0, inplace=True)
-    feature_book = feature_book[feature_book.y != 3]
+    feature_book = feature_book.transform({"lifetime":lambda x: x/(60*60*24),
+                            "tx_freq_mean":lambda x: x/(60*60),
+                            "dollar_obtain_per_tx": lambda x : np.log(x),
+                            "dollar_spent_per_tx": lambda x: np.log(x),
+                            "total_dollar": lambda x: np.log(x)})
     return feature_book[feature_book.tags.astype(bool)]
 
 def chain():
