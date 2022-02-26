@@ -32,9 +32,9 @@ def get_feature_book():
     feature_book.fillna(0, inplace=True)
     feature_book['lifetime'] = feature_book['lifetime'].map(lambda x: x/(60*60*24))
     feature_book['tx_freq_mean'] = feature_book['tx_freq_mean'].map(lambda x: x/(60*60))
-    feature_book['total_dollar'] = feature_book['total_dollar'].map(lambda x: np.log(x))
-    feature_book['dollar_spent_per_tx'] = feature_book['dollar_spent_per_tx'].map(lambda x: np.log(x))
-    feature_book['dollar_obtain_per_tx']  =  feature_book['dollar_obtain_per_tx'].map(lambda x : np.log(x))
+    feature_book['total_dollar'] = feature_book['total_dollar'].map(lambda x: np.log(x) if x != 0 else 0)
+    feature_book['dollar_spent_per_tx'] = feature_book['dollar_spent_per_tx'].map(lambda x: np.log(x) if x != 0 else 0)
+    feature_book['dollar_obtain_per_tx']  =  feature_book['dollar_obtain_per_tx'].map(lambda x : np.log(x) if x != 0 else 0)
     return feature_book[feature_book.tags.astype(bool)]
 
 def chain():
