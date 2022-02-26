@@ -89,7 +89,7 @@ xgb_params = {
     'scale_pos_weight':[1,2,4]
 }
 
-if __name__ == 'main':
+if __name__ == '__main__':
     trainer = Trainer()
     trainer.models = [
         GridSearchCV(estimator=xgb.XGBClassifier(),
