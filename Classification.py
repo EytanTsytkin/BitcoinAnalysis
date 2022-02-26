@@ -81,7 +81,7 @@ class Trainer:
 xgb_params = {
     'max_depth': [6,8,10,12],
     'sampling_method':['uniform','gradient_based'],
-    'tree_method':['auto','gpu_hist','approx'],
+    'tree_method':['auto','hist','approx'],
     'min_child_weight':[1,5,10],
     'n_estimators':[50,150,250],
     'learning_rate':[0.01,0.001],
