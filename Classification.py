@@ -69,8 +69,8 @@ class Trainer:
     #     print(f'Finished predicting. Duration: {(time.time() - t) / 60} minutes.')
 
 
-    def full_cycle(self,  chosen_models: list, if):
-        self.train(chosen_models)
+    def full_cycle(self,  chosen_models: list, save=False):
+        self.train(chosen_models,save)
         print('Reults:')
         for model in chosen_models:
             print(f'{model.__str__().replace("()","")} '
