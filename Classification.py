@@ -26,7 +26,8 @@ class Trainer:
         if fraud:
             self.fraud =True
             self.raw_data = Analysis.get_feature_book(for_ml=True,fraud=True)
-        self.raw_data = Analysis.get_feature_book(for_ml=True)
+        else:
+            self.raw_data = Analysis.get_feature_book(for_ml=True)
         self.X_train, self.X_test, self.Y_train, self.Y_test = self.split_train_test()
         self.models = []
 
