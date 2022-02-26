@@ -8,6 +8,7 @@ headers = {
         'referer': 'https://blockchain.com/',
     }
 Typedict = {'services/others': ['checkbitcoinaddress']}
+
 def getAddresses_cloud(pageNum):
     addresses = []
     scraper = cloudscraper.create_scraper()
