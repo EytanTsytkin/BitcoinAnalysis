@@ -85,8 +85,7 @@ xgb_params = {
     'min_child_weight':[1,5,10],
     'n_estimators':[50,150,250],
     'learning_rate':[0.01,0.001],
-    'colsample_bytree':[0.5,1.0],
-    'scale_pos_weight':[1,2,4]
+    'colsample_bytree':[0.5,1.0]
 }
 
 if __name__ == '__main__':
