@@ -50,7 +50,7 @@ def test_merge(test_set=None):
     return test_set
 
 
-def merge(addressbook):
+def merge(addressbook=None):
     t = time.time()
     if not addressbook:
         addressbook = AddressBook()
