@@ -25,7 +25,7 @@ def string_to_list(string):
         lst = literal_eval(string.replace(", nan",""))
     return lst
 
-def get_feature_book(for_ml=False):
+def get_feature_book(for_ml=False,fraud=False):
     feature_book = pd.read_csv(FEATURE_BOOK_PATH, index_col=["address"], converters={"tags":string_to_list})
     feature_book.drop("Unnamed: 0",inplace=True,axis=1)
     feature_book.fillna(0, inplace=True)
@@ -38,7 +38,11 @@ def get_feature_book(for_ml=False):
     if for_ml:
         wanted_features = ["lifetime", "tx_freq_mean", "tx_freq_std", "tx_type_odds", "consecutive_in_tx_score",
                            "consecutive_out_tx_score", "dollar_obtain_per_tx", "dollar_spent_per_tx", "tx_value_std",
-                           "max_fee", "total_num_tx", "total_dollar", "y"]
+                           "max_fee", "total_num_tx", "total_dollar"]
+        if fraud:
+             wanted_features.append("is_fraud")
+        else:
+            wanted_features.append("y")
         return feature_book[wanted_features]
     return feature_book
 

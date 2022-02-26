@@ -20,7 +20,9 @@ from sklearn.metrics import classification_report
 
 
 class Trainer:
-    def __init__(self):
+    def __init__(self,fraud=False):
+        if fraud:
+            self.raw_data = Analysis.get_feature_book(for_ml=True)
         self.raw_data = Analysis.get_feature_book(for_ml=True)
         self.X_train, self.X_test, self.Y_train, self.Y_test = self.split_train_test()
         self.models = []
