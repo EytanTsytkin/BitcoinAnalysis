@@ -35,10 +35,16 @@ class Trainer:
 
     def split_train_test(self):
         splitter = StratifiedShuffleSplit(test_size=.2, n_splits=1, random_state=7)
-        split = splitter.split(self.raw_data, self.raw_data['y'])
-        train_indx, test_indx = next(split)
-        return self.raw_data.iloc[train_indx].drop('y', axis=1), self.raw_data.iloc[test_indx].drop('y', axis=1), \
-               self.raw_data.iloc[train_indx]['y'], self.raw_data.iloc[test_indx]['y']
+        if self.fraud:
+            split = splitter.split(self.raw_data, self.raw_data['is_fraud'])
+            train_indx, test_indx = next(split)
+            return self.raw_data.iloc[train_indx].drop('is_fraud', axis=1), self.raw_data.iloc[test_indx].drop('is_fraud', axis=1), \
+                   self.raw_data.iloc[train_indx]['is_fraud'], self.raw_data.iloc[test_indx]['is_fraud']
+        else:
+            split = splitter.split(self.raw_data, self.raw_data['y'])
+            train_indx, test_indx = next(split)
+            return self.raw_data.iloc[train_indx].drop('y', axis=1), self.raw_data.iloc[test_indx].drop('y', axis=1), \
+                   self.raw_data.iloc[train_indx]['y'], self.raw_data.iloc[test_indx]['y']
 
 
 
