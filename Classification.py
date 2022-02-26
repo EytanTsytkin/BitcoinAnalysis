@@ -1,7 +1,8 @@
 import csv
 import time
-import PATHS
 import json
+import PATHS
+import pickle
 import Analysis
 import numpy as np
 import pandas as pd
@@ -21,8 +22,10 @@ from sklearn.metrics import classification_report
 
 class Trainer:
     def __init__(self,fraud=False):
+        self.fraud = False
         if fraud:
-            self.raw_data = Analysis.get_feature_book(for_ml=True)
+            self.fraud =True
+            self.raw_data = Analysis.get_feature_book(for_ml=True,fraud=True)
         self.raw_data = Analysis.get_feature_book(for_ml=True)
         self.X_train, self.X_test, self.Y_train, self.Y_test = self.split_train_test()
         self.models = []
@@ -38,37 +41,50 @@ class Trainer:
 
 
 
-    def train(self, chosen_models: list):
+    def train(self, chosen_models: list, save=False):
         t = time.time()
         print(f'Strating training:')
         for model in chosen_models:
             m = time.time()
             print(f'Traning {model.__str__().replace("()","")}..')
             model.fit(self.X_train,self.Y_train)
+            p = model.predict(self.X_test)
+            self.results[model.__str__().replace("()", "")] = [p, accuracy_score(self.Y_test, p),
+                                                               (time.time() - m) / 60]
+            if save:
+                self.save_model(model,fraud=self.fraud)
             print(f'Done traning {model.__str__().replace("()","")}, Duration: {(time.time() -m)/60} minutes.')
         print(f'Finished training all, Duration: {(time.time() -t)/60} minutes.')
 
 
-    def generate_predictions(self , chosen_models: list):
-        t = time.time()
-        print(f'Predicting...')
-        for model in chosen_models:
-            m = time.time()
-            print(f'Prediction with {model.__str__().replace("()","")}..')
-            p = model.predict(self.X_test)
-            self.results[model.__str__().replace("()","")] = [p,accuracy_score(self.Y_test,p),(time.time()-m)/60]
-            print(f'Done predicitng with {model.__str__().replace("()","")}, Duration: {(time.time() - m) / 60} minutes.')
-        print(f'Finished predicting. Duration: {(time.time() - t) / 60} minutes.')
+    # def generate_predictions(self , chosen_models: list):
+    #     t = time.time()
+    #     print(f'Predicting...')
+    #     for model in chosen_models:
+    #         m = time.time()
+    #         print(f'Prediction with {model.__str__().replace("()","")}..')
+    #         p = model.predict(self.X_test)
+    #         self.results[model.__str__().replace("()","")] = [p,accuracy_score(self.Y_test,p),(time.time()-m)/60]
+    #         print(f'Done predicitng with {model.__str__().replace("()","")}, Duration: {(time.time() - m) / 60} minutes.')
+    #     print(f'Finished predicting. Duration: {(time.time() - t) / 60} minutes.')
 
 
-    def full_cycle(self,  chosen_models: list):
+    def full_cycle(self,  chosen_models: list, if):
         self.train(chosen_models)
-        self.generate_predictions(chosen_models)
         print('Reults:')
         for model in chosen_models:
             print(f'{model.__str__().replace("()","")} '
                   f'Accuracy score: {self.results[model.__str__().replace("()","")][1]},'
                   f'Unique values: {np.unique(self.results[model.__str__().replace("()","")][0],return_counts=True)}')
+
+
+    def save_model(self, chosen_models: list, fraud=False):
+        for model in chosen_models:
+            fname = model.__str__().split('(')[0] +'scr' +self.results[model.__str__().replace("()","")][1]
+            if fraud:
+                fname = 'fraud_' +fname
+            pickle.dump(model, open(PATHS.ML_PATH+'models/'+fname,'wb'))
+
 
     def log(self):
         with open(PATHS.ML_PATH+'log.csv','a') as f:
@@ -79,28 +95,3 @@ class Trainer:
                                  val[2],
                                  val[0]])
 
-
-xgb_params = {
-    'max_depth': [6,8,10,12],
-    'sampling_method':['uniform','gradient_based'],
-    'tree_method':['auto','hist','approx'],
-    'min_child_weight':[1,5,10],
-    'n_estimators':[50,150,250],
-    'learning_rate':[0.01,0.001],
-    'colsample_bytree':[0.5,1.0]
-}
-
-if __name__ == '__main__':
-    trainer = Trainer()
-    trainer.models = [
-        GridSearchCV(estimator=xgb.XGBClassifier(),
-                     param_grid=xgb_params,
-                     scoring='accuracy',
-                     cv=3,
-                     verbose=4,
-                     n_jobs=-1)
-    ]
-    trainer.train([trainer.models[0]])
-    results = pd.DataFrame(trainer.models[0].cv_results_).sort_values(by='rank_test_score',ascending=False,inplace=True)
-    print(results.head(20).to_string())
-    print(results.tail(20).to_string())
