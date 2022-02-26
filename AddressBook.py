@@ -9,8 +9,8 @@ import datetime
 import numpy as np
 import pandas as pd
 from PATHS import *
-import matplotlib.dates as mdates
 from multiprocessing import Pool
+import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
@@ -96,6 +96,7 @@ class AddressBook:
         # POOL.map(self.merge_single_address, self.update_addresses)
         for address in self.update_addresses:
             self.merge_single_address(address)
+        print(f'Going large on {len(self.large_addresses)}')
         for address in self.large_addresses:
             self.merge_single_address(address, large=True)
         print(
@@ -374,61 +375,6 @@ class AddressBook:
             plt.show()
 
 
-def test_n_times_multi(n, start, stop):
-    test_results = []
-    for test in range(n):
-        test_results.append(test_multi_update(start, stop))
-    return test_results
 
-
-def test_n_times(n, start, stop):
-    test_results = []
-    for test in range(n):
-        test_results.append(test_update(start, stop))
-    return test_results
-
-
-def test_update(start, stop, checkpoint=None):
-    ab = AddressBook()
-    t = time.time()
-    if checkpoint:
-        ab.found_wallets = set([str(f.split('.csv')[0]) for f in os.listdir(ADDRESS_VECTORS_UPDATE)])
-        print(f'Starting with {len(ab.found_wallets)}.')
-        ab.update_range(ab.address_book.keys(), start=checkpoint, stop=stop)
-    else:
-        ab.update_range(ab.address_book.keys(), start=start, stop=stop)
-    print(f'Total time for 100 blocks:{time.time() - t}')
-    return time.time() - t
-
-
-def test_multi_update(start, stop):
-    ab = AddressBook()
-    t = time.time()
-    ab.update_range_multiproc(ab.address_book.keys(), start=start, stop=stop)
-    print(f'Total time for 100 blocks:{time.time() - t}')
-    return time.time() - t
-
-
-def test_merge(test_set=None):
-    ab = AddressBook()
-    if not test_set:
-        ab.update_addresses = set(random.sample(ab.address_book.keys(), 100))
-        test_set = ab.update_addresses
-    else:
-        ab.update_addresses = test_set
-    print('First run:')
-    ab.merge_vectors()
-    print('Second run:')
-    ab.merge_vectors()
-    print('Third run:')
-    ab.merge_vectors()
-    return test_set
-
-
-def merge_all():
-    ab = AddressBook()
-    found_addresses = set([address.replace('.csv', '') for address in os.listdir(ADDRESS_VECTORS_PATH)])
-    ab.update_addresses = set(ab.address_book.keys()).difference(set(found_addresses))
-    ab.merge_vectors()
 
 

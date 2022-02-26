@@ -189,6 +189,7 @@ def peers_statistics(df):
     # how many close friends does he have (=peers with more than 2 txs)
     pass
 
+
 def extract_features_BTC(df):
     odds = df.tx_type.value_counts().values[0]/df.tx_type.value_counts().values[1]
     life_time = df.time.iloc[-1]-df.time.iloc[1]
@@ -198,6 +199,7 @@ def extract_features_BTC(df):
     max_fee = df.feeBTC.max #most values is 0 so need to think if we want to recalculte or take diff from 0
     total_num_tx = df.shape[0]
     total_btc = df.valueBTC.sum()
+
 
 def heat_cor_view(big_df,wanted_method : str):
     # i referred the input as pandas but this is still raw function
@@ -251,8 +253,8 @@ def extract_range(start,end):
 
 
 def make_average_tx_and_fee_dict():
-    CHAIN = chain()
-    CC = cc()
+    chain = chain()
+    cc = cc()
     t = time.time()
     print('Strated extraction..')
     prob_dict = {(1000*k):extract_range((1000*k),((1000*k)+999)) for k in range(0,665)}
