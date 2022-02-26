@@ -1,17 +1,18 @@
+ABUSE_data = '/root/abuse_data/'
 ABUSE_PATH = '/root/abuse_data/abuse.csv'
 ABUSE_CORPUS_PATH = '/root/abuse_data/abuse_corpus.mm'
 ADDRESSBOOK_PATH = '/root/address_book/AddressBook.json'
 ADDRESS_VECTORS_UPDATE = '/root/address_vectors_test/'
 ADDRESS_VECTORS_PATH = '/root/address_vectors_merged4/'
-LARGE_ADDRESS_VECTORS_PATH = '/root/address_vectors_large/'
-FEATURE_BOOK_PATH = '/root/address_book/feature_book2.csv'
 CONFIG_PATH = '/root/config.json'
 CLUSTER_PATH = '/root/BlockSci/docs/reference/clustering'
+FEATURE_BOOK_PATH = '/root/address_book/feature_book2.csv'
 FREQ_DICT_EN = '/root/abuse_data/english_freq_dict.json'
 IMAGE_PATH = '/home/eytantsytkin/BitcoinAnalysis'
+LARGE_ADDRESS_VECTORS_PATH = '/root/address_vectors_large/'
 PLOTS_PATH = '/mnt/plots/'
 TAGS_PATH = '/root/address_book/tags/'
-ABUSE_data = '/root/abuse_data/'
+ML_PATH = '/root/ml/'
 
 
 
