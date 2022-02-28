@@ -332,4 +332,106 @@ def make_average_tx_and_fee_dict():
 
 
 
+def make_scat_mat_plot():
+    fb = get_feature_book(for_ml=True,fraud=True)
+    legit_idx = pd.DataFrame(data=[fb.loc[idx] for idx in fb.index if fb.loc[idx]['is_fraud']==False],columns=fb.columns)
+    fraud_idx = pd.DataFrame(data=[fb.loc[idx] for idx in fb.index if fb.loc[idx]['is_fraud'] == True],
+                             columns=fb.columns)
 
+    fig, axes = plt.subplots(4, 3, figsize=(20, 20))
+    axes = axes.flat
+    axes[0].hist(legit_idx.max_fee.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='blue', alpha=0.5,
+                 log=True, label='Legit')
+    axes[0].hist(fraud_idx.max_fee.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='red', alpha=0.5,
+                 log=True, label='Fraud')
+    axes[0].set_title('Max fee')
+    axes[0].set_xlabel('Log max_fee')
+    axes[0].set_ylabel('Log count')
+    axes[0].legend()
+
+    axes[1].hist(legit_idx.total_num_tx, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[1].hist(fraud_idx.total_num_tx, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[1].set_title('Total Num Tx')
+    axes[1].set_xlabel('total_num_tx')
+    axes[1].set_ylabel('Log count')
+    axes[1].legend()
+
+    axes[2].hist(legit_idx.total_dollar, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[2].hist(fraud_idx.total_dollar, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[2].set_title('Total Dollar')
+    axes[2].set_xlabel('total_dollar')
+    axes[2].set_ylabel('Log count')
+    axes[2].legend()
+
+    axes[3].hist(legit_idx.lifetime, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[3].hist(fraud_idx.lifetime, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[3].set_title('Lifetime')
+    axes[3].set_xlabel('Days')
+    axes[3].set_ylabel('Log count')
+    axes[3].legend()
+
+    axes[4].hist(legit_idx.tx_freq_mean, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[4].hist(fraud_idx.tx_freq_mean, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[4].set_title('Tx frequency mean')
+    axes[4].set_xlabel('Hours')
+    axes[4].set_ylabel('Log count')
+    axes[4].legend()
+
+    axes[5].hist(legit_idx.tx_freq_std, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[5].hist(fraud_idx.tx_freq_std, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[5].set_title('Tx frequency standard deviation')
+    axes[5].set_xlabel('root(Hours)')
+    axes[5].set_ylabel('Log count')
+    axes[5].legend()
+
+    axes[6].hist(legit_idx.tx_type_odds.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='blue', alpha=0.5,
+                 log=True, label='Legit')
+    axes[6].hist(fraud_idx.tx_type_odds.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='red', alpha=0.5,
+                 log=True, label='Fraud')
+    axes[6].set_title('Tx type odds')
+    axes[6].set_xlabel('Odds Ratio')
+    axes[6].set_ylabel('Log count')
+    axes[6].legend()
+
+    axes[7].hist(legit_idx.consecutive_in_tx_score, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[7].hist(fraud_idx.consecutive_in_tx_score, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[7].set_title('Consecutive incoming txs score')
+    axes[7].set_xlabel('Score')
+    axes[7].set_ylabel('count')
+    axes[7].legend()
+
+    axes[8].hist(legit_idx.consecutive_out_tx_score.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='blue',
+                 alpha=0.5, log=True, label='Legit')
+    axes[8].hist(fraud_idx.consecutive_out_tx_score.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='red',
+                 alpha=0.5, log=True, label='Fraud')
+    axes[8].set_title('Consecutive outgoing txs score')
+    axes[8].set_xlabel('Score')
+    axes[8].set_ylabel('count')
+    axes[8].legend()
+
+    axes[9].hist(legit_idx.dollar_obtain_per_tx, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[9].hist(fraud_idx.dollar_obtain_per_tx, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[9].set_title('Avg value of incoming tx')
+    axes[9].set_xlabel('USD')
+    axes[9].set_ylabel('count')
+    axes[9].legend()
+
+    axes[10].hist(legit_idx.dollar_spent_per_tx, bins=50, color='blue', alpha=0.5, log=True, label='Legit')
+    axes[10].hist(fraud_idx.dollar_spent_per_tx, bins=50, color='red', alpha=0.5, log=True, label='Fraud')
+    axes[10].set_title('Avg value of outgoing tx')
+    axes[10].set_xlabel('USD')
+    axes[10].set_ylabel('count')
+    axes[10].legend()
+
+    axes[11].hist(legit_idx.tx_value_std.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='blue', alpha=0.5,
+                  log=True, label='Legit')
+    axes[11].hist(fraud_idx.tx_value_std.map(lambda x: np.log(x) if x != 0 else -30), bins=50, color='red', alpha=0.5,
+                  log=True, label='Fraud')
+    axes[11].set_title('Tx Value Standard deviation')
+    axes[11].set_xlabel('root(USD)')
+    axes[11].set_ylabel('count')
+    axes[11].legend()
+
+    fig.tight_layout()
+    fig.savefig('/mnt/plots/scat_mat_plot.png')
+    fig.show()
