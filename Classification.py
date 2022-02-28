@@ -33,6 +33,9 @@ from yellowbrick.classifier import ClassificationReport
 
 
 class Trainer:
+    """
+    Class for training and evaluation multiple models.
+    """
     def __init__(self,random_state,fraud=False):
         self.fraud = False
         self.random_state = random_state
@@ -51,6 +54,7 @@ class Trainer:
 
 
     def split_train_test(self):
+
         splitter = StratifiedShuffleSplit(test_size=.2, n_splits=1, random_state=self.random_state)
         if self.fraud:
             split = splitter.split(self.raw_data, self.raw_data['is_fraud'])
@@ -110,11 +114,17 @@ class Trainer:
                                  val[0]])
 
     def shap(self, chosen_models):
+        """
+        plots a shap value plot.
+        """
         for model in chosen_models:
             shap_values = shap.TreeExplainer(model).shap_values(self.X_train)
             shap.summary_plot(shap_values, self.X_train, plot_type="bar")
 
     def report(self,model,save=False):
+        """
+        plots and saves a confusion matrix.
+        """
         score = round(self.results[model.__str__().replace("()","")][1],3)
         name = model.__str__().split('(')[0]
         if self.fraud:
@@ -133,11 +143,16 @@ class Trainer:
         vis.show()
 
 
-def mltiple_evaluations(n):
+def multiple_evaluations(n,model):
+    """
+    Runs n training cycles of the chosen model on random splits.
+    Saves precision/recall plots.
+    """
+    name = model.__str__().split('(')[0]
     precision_recall_list = []
     for i in range(n):
         trainer_for_avg = Trainer(random.randint(0, 1000), fraud=True)
-        trainer_for_avg.models.append(RandomForestClassifier(n_jobs=16))
+        trainer_for_avg.models.append(model)
         trainer_for_avg.models[0].fit(trainer_for_avg.X_train, trainer_for_avg.Y_train)
         pred = trainer_for_avg.models[0].predict(trainer_for_avg.X_test)
         precision_recall_list.append(
@@ -146,24 +161,25 @@ def mltiple_evaluations(n):
     plt.close()
     plt.hist([prec[0] for prec in precision_recall_list], bins=20)
     plt.suptitle('Histogram of precision score')
-    plt.title(f'Random Forest Classifier, {n} runs')
+    plt.title(f'{name}, {n} runs')
     plt.xlabel('Precision score')
     plt.ylabel('Count')
-    plt.savefig(f'/mnt/plots/precision_hist_{n}.png')
+    plt.savefig(f'{name}_/mnt/plots/precision_hist2_{n}.png')
     plt.show()
     plt.close()
     plt.hist([prec[1] for prec in precision_recall_list], bins=20,color='purple')
     plt.suptitle('Histogram of recall score')
-    plt.title(f'Random Forest Classifier, {n} runs')
+    plt.title(f'{name}, {n} runs')
     plt.xlabel('Recall score')
     plt.ylabel('Count')
-    plt.savefig(f'/mnt/plots/recall_hist_{n}.png')
+    plt.savefig(f'{name}_/mnt/plots/recall_hist_{n}.png')
     plt.show()
     plt.close()
     plt.scatter([prec[0] for prec in precision_recall_list],[prec[1] for prec in precision_recall_list],c=[prec[0]*prec[1] for prec in precision_recall_list],cmap='plasma')
     plt.suptitle('Precison/Recall Score')
-    plt.title(f'Random Forest Classifier, {n} runs')
+    plt.title(f'{name}, {n} runs')
     plt.xlabel('Precision score')
     plt.ylabel('Recall score')
-    plt.savefig(f'/mnt/plots/precision_recall_scatter_{n}.png')
+    plt.savefig(f'/mnt/plots/'
+                f'{name}_precision_recall_scatter_{n}.png')
     plt.show()
